@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}{{ topic.title|default('Topic') }}{% endblock %}
+
+{% block content %}
+<div class="topic-container" id="topic-container">
+
+  <a href="{{ url_for('roadmap') }}" class="back-link" id="back-to-roadmap-link">← Back to Roadmap</a>
+
+  <div class="page-head">
+    <div>
+      <h1 class="page-title">{{ topic.title|default('Topic title') }}</h1>
+      <span class="difficulty-pill difficulty-{{ topic.difficulty|default('beginner') }}">{{ topic.difficulty|default('beginner') }}</span>
+    </div>
+    <div class="page-head-actions">
+      <button class="btn btn-primary" id="mark-complete-btn" type="button">Mark as complete</button>
+    </div>
+  </div>
+
+  <section class="dashboard-card topic-content-card">
+    <h2 class="card-title">Overview</h2>
+    <p class="topic-description">{{ topic.description|default('No description available for this topic yet.') }}</p>
+  </section>
+
+  <section class="dashboard-card topic-content-card">
+    <h2 class="card-title">Lesson Content</h2>
+    <div class="topic-body" id="topic-body">
+      {{ topic.content|default('Lesson content will appear here.')|safe }}
+    </div>
+  </section>
+
+  <section class="dashboard-card topic-content-card">
+    <h2 class="card-title">Your Progress</h2>
+    <div class="progress-bar">
+      <div class="progress-bar-fill" style="width: {{ topic.completion|default(0) }}%;"></div>
+    </div>
+    <span class="progress-bar-label">{{ topic.completion|default(0) }}% complete</span>
+  </section>
+
+  <div class="topic-actions">
+    <button class="btn btn-outline" id="ask-mentor-about-topic-btn" type="button">✦ Ask Mentor about this topic</button>
+    <a href="{{ url_for('quiz') }}?topic={{ topic.id|default('') }}" class="btn btn-primary" id="take-topic-quiz-btn">Take a quiz on this topic</a>
+  </div>
+
+</div>
+{% endblock %}

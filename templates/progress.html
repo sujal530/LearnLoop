@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Progress{% endblock %}
+
+{% block content %}
+<div class="progress-container" id="progress-container">
+
+  <div class="page-head">
+    <div>
+      <h1 class="page-title">Progress</h1>
+      <p class="page-subtitle">Track your completion across every topic.</p>
+    </div>
+  </div>
+
+  <section class="dashboard-grid">
+    <article class="dashboard-card chart-card">
+      <div class="card-head">
+        <div>
+          <h2 class="card-title">Overall Progress</h2>
+          <p class="card-subtitle">Completion trend over time</p>
+        </div>
+      </div>
+      <div class="chart-body">
+        <canvas id="progress-trend-chart"></canvas>
+      </div>
+    </article>
+
+    <article class="dashboard-card chart-card">
+      <div class="card-head">
+        <div>
+          <h2 class="card-title">Topic Breakdown</h2>
+          <p class="card-subtitle">Completion by topic</p>
+        </div>
+      </div>
+      <div class="chart-body">
+        <canvas id="progress-topic-chart"></canvas>
+      </div>
+    </article>
+  </section>
+
+  <section class="dashboard-card list-card">
+    <h2 class="card-title">Topic Details</h2>
+    <table class="data-table" id="progress-table">
+      <thead>
+        <tr>
+          <th>Topic</th>
+          <th>Completion</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="progress-table-body">
+        {% for entry in progress_entries|default([]) %}
+        <tr>
+          <td>{{ entry.topic }}</td>
+          <td>
+            <div class="progress-bar progress-bar-inline">
+              <div class="progress-bar-fill" style="width: {{ entry.completion }}%;"></div>
+            </div>
+            <span class="progress-bar-label">{{ entry.completion }}%</span>
+          </td>
+          <td>
+            <span class="status-pill {% if entry.completion == 100 %}status-pill-complete{% elif entry.completion > 0 %}status-pill-active{% else %}status-pill-pending{% endif %}">
+              {% if entry.completion == 100 %}Complete{% elif entry.completion > 0 %}In Progress{% else %}Not Started{% endif %}
+            </span>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3" class="empty-state">No progress recorded yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/progress.js') }}"></script>
+{% endblock %}
