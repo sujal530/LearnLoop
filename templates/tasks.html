@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Tasks{% endblock %}
+
+{% block content %}
+<div class="tasks-container" id="tasks-container">
+
+  <div class="page-head">
+    <div>
+      <h1 class="page-title">Tasks</h1>
+      <p class="page-subtitle">Everything you need to get done, in one place.</p>
+    </div>
+    <div class="page-head-actions">
+      <button class="btn btn-primary" id="new-task-btn" type="button">+ New Task</button>
+    </div>
+  </div>
+
+  <div class="task-board" id="task-board">
+
+    <section class="task-column">
+      <h2 class="task-column-title">Pending</h2>
+      <ul class="task-list" id="pending-task-list">
+        {% for task in tasks|default([]) if task.status == 'pending' %}
+        <li class="dashboard-card task-card" data-task-id="{{ task.id }}">
+          <p class="task-card-title">{{ task.title }}</p>
+          <p class="task-card-desc">{{ task.description }}</p>
+          <div class="task-card-footer">
+            <span class="task-due">{{ task.deadline }}</span>
+            <button class="icon-btn task-edit-btn" type="button" aria-label="Edit task">✎</button>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <section class="task-column">
+      <h2 class="task-column-title">In Progress</h2>
+      <ul class="task-list" id="in-progress-task-list">
+        {% for task in tasks|default([]) if task.status == 'in_progress' %}
+        <li class="dashboard-card task-card" data-task-id="{{ task.id }}">
+          <p class="task-card-title">{{ task.title }}</p>
+          <p class="task-card-desc">{{ task.description }}</p>
+          <div class="task-card-footer">
+            <span class="task-due">{{ task.deadline }}</span>
+            <button class="icon-btn task-edit-btn" type="button" aria-label="Edit task">✎</button>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <section class="task-column">
+      <h2 class="task-column-title">Completed</h2>
+      <ul class="task-list" id="completed-task-list">
+        {% for task in tasks|default([]) if task.status == 'completed' %}
+        <li class="dashboard-card task-card task-card-done" data-task-id="{{ task.id }}">
+          <p class="task-card-title">{{ task.title }}</p>
+          <p class="task-card-desc">{{ task.description }}</p>
+          <div class="task-card-footer">
+            <span class="task-due">{{ task.deadline }}</span>
+            <button class="icon-btn task-edit-btn" type="button" aria-label="Edit task">✎</button>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+
+  </div>
+
+  <!-- New / Edit Task Modal -->
+  <div class="modal-overlay" id="task-modal-overlay">
+    <div class="dashboard-card modal-card" id="task-modal">
+      <h2 class="card-title">New Task</h2>
+      <form id="task-form" method="POST" action="{{ url_for('tasks') }}">
+        <div class="form-group">
+          <label for="task_title">Title</label>
+          <input type="text" id="task_title" name="title" placeholder="Task title" required>
+        </div>
+        <div class="form-group">
+          <label for="task_description">Description</label>
+          <textarea id="task_description" name="description" placeholder="Task description"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="task_deadline">Deadline</label>
+          <input type="date" id="task_deadline" name="deadline">
+        </div>
+        <div class="form-group">
+          <label for="task_status">Status</label>
+          <select id="task_status" name="status">
+            <option value="pending">Pending</option>
+            <option value="in_progress">In Progress</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="cancel-task-btn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="save-task-btn">Save Task</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/tasks.js') }}"></script>
+{% endblock %}

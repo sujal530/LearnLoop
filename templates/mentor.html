@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}AI Mentor{% endblock %}
+
+{% block content %}
+<div class="mentor-container" id="mentor-container">
+
+  <div class="page-head">
+    <div>
+      <h1 class="page-title">AI Mentor</h1>
+      <p class="page-subtitle">Ask anything about what you're learning.</p>
+    </div>
+  </div>
+
+  <section class="dashboard-card mentor-chat-card">
+
+    <div class="mentor-chat-log" id="mentor-chat-log">
+      {% for message in chat_history|default([]) %}
+        <div class="chat-bubble {% if message.sender == 'user' %}chat-bubble-user{% else %}chat-bubble-mentor{% endif %}">
+          <p class="chat-bubble-text">{{ message.text }}</p>
+          <span class="chat-bubble-time">{{ message.time_ago }}</span>
+        </div>
+      {% else %}
+        <div class="chat-bubble chat-bubble-mentor">
+          <p class="chat-bubble-text">Hi! I'm your AI Mentor. Ask me anything about your current topic.</p>
+        </div>
+      {% endfor %}
+    </div>
+
+    <form class="mentor-input-row" id="mentor-form" method="POST" action="{{ url_for('mentor') }}">
+      <input type="text" id="mentor-input" name="message" placeholder="Ask your mentor a question..." autocomplete="off" required>
+      <button type="submit" class="btn btn-primary" id="send-mentor-message-btn">Send</button>
+    </form>
+
+  </section>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/mentor.js') }}"></script>
+{% endblock %}

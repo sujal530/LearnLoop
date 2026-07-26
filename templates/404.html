@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Page not found | LearnLoop AI</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="error-body">
+
+  <div class="error-wrapper">
+    <div class="auth-brand">
+      <span class="brand-icon">✦</span>
+      <span class="brand-name">LearnLoop <span class="brand-accent">AI</span></span>
+    </div>
+
+    <p class="error-code">404</p>
+    <h1 class="error-title">This page took a wrong turn.</h1>
+    <p class="error-copy">The page you're looking for doesn't exist or may have moved.</p>
+
+    <div class="error-actions">
+      <a href="{{ url_for('dashboard') }}" class="btn btn-primary" id="error-dashboard-link">Back to Dashboard</a>
+      <a href="{{ url_for('index') }}" class="btn btn-outline" id="error-home-link">Go to Homepage</a>
+    </div>
+  </div>
+
+</body>
+</html>

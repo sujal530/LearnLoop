@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-container" id="dashboard-container">
+
+  <div class="page-head">
+    <div>
+      <h1 class="page-title">Welcome back, {{ session.get('user_name', 'learner') }}</h1>
+      <p class="page-subtitle">Here's a snapshot of your learning this week.</p>
+    </div>
+    <div class="page-head-actions">
+      <button class="btn btn-outline" id="ask-mentor-btn" type="button">✦ Ask Mentor</button>
+      <button class="btn btn-primary" id="new-task-btn" type="button">+ New Task</button>
+    </div>
+  </div>
+
+  <section class="stat-grid">
+    <article class="dashboard-card stat-card">
+      <div class="stat-icon stat-icon-pink">↗</div>
+      <span class="stat-trend stat-trend-up">↗ +{{ completion_delta|default('8') }}%</span>
+      <p class="stat-value">{{ completion_percent|default('78') }}%</p>
+      <p class="stat-label">Completion</p>
+    </article>
+
+    <article class="dashboard-card stat-card">
+      <div class="stat-icon stat-icon-blue">⏱</div>
+      <span class="stat-trend stat-trend-up">↗ +{{ study_hours_delta|default('5') }}h</span>
+      <p class="stat-value">{{ study_hours|default('42') }}h</p>
+      <p class="stat-label">Study Hours</p>
+    </article>
+
+    <article class="dashboard-card stat-card">
+      <div class="stat-icon stat-icon-orange">🔥</div>
+      <span class="stat-trend stat-trend-up">↗ +{{ streak_delta|default('2') }}</span>
+      <p class="stat-value">{{ current_streak|default('14') }} days</p>
+      <p class="stat-label">Current Streak</p>
+    </article>
+
+    <article class="dashboard-card stat-card">
+      <div class="stat-icon stat-icon-green">🧠</div>
+      <span class="stat-trend stat-trend-up">↗ +{{ score_delta|default('6') }}</span>
+      <p class="stat-value">{{ learning_score|default('82') }}</p>
+      <p class="stat-label">Learning Score</p>
+    </article>
+
+    <article class="dashboard-card stat-card">
+      <div class="stat-icon stat-icon-cyan">⚡</div>
+      <span class="stat-trend stat-trend-up">↗ +{{ xp_delta|default('340') }}</span>
+      <p class="stat-value">{{ total_xp|default('12480') }} XP</p>
+      <p class="stat-label">Total XP</p>
+    </article>
+  </section>
+
+  <section class="dashboard-grid">
+    <article class="dashboard-card chart-card">
+      <div class="card-head">
+        <div>
+          <h2 class="card-title">Weekly Progress</h2>
+          <p class="card-subtitle">Study hours over the past week</p>
+        </div>
+        <span class="chip chip-active">This week</span>
+      </div>
+      <div class="chart-body">
+        <canvas id="weekly-progress-chart"></canvas>
+      </div>
+    </article>
+
+    {% include "learning_dna.html" %}
+  </section>
+
+  <section class="dashboard-grid">
+    <article class="dashboard-card chart-card">
+      <div class="card-head">
+        <div>
+          <h2 class="card-title">Tasks Completed</h2>
+          <p class="card-subtitle">Weekly task volume</p>
+        </div>
+      </div>
+      <div class="chart-body">
+        <canvas id="tasks-completed-chart"></canvas>
+      </div>
+    </article>
+
+    <article class="dashboard-card heatmap-card">
+      <div class="card-head">
+        <div>
+          <h2 class="card-title">Activity Heatmap</h2>
+          <p class="card-subtitle">Last 14 weeks of learning activity</p>
+        </div>
+      </div>
+      <div class="heatmap-grid" id="activity-heatmap"></div>
+      <div class="heatmap-legend">
+        <span>Less</span>
+        <span class="heatmap-cell level-0"></span>
+        <span class="heatmap-cell level-1"></span>
+        <span class="heatmap-cell level-2"></span>
+        <span class="heatmap-cell level-3"></span>
+        <span>More</span>
+      </div>
+    </article>
+  </section>
+
+  <section class="dashboard-grid dashboard-grid-thirds">
+    <article class="dashboard-card list-card">
+      <h2 class="card-title">Recent Activity</h2>
+      <ul class="activity-list" id="recent-activity-list">
+        {% for activity in recent_activities|default([]) %}
+        <li class="activity-item">
+          <span class="activity-icon">{{ activity.icon }}</span>
+          <div>
+            <p class="activity-text">{{ activity.text }}</p>
+            <p class="activity-time">{{ activity.time_ago }}</p>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </article>
+
+    <article class="dashboard-card list-card">
+      <h2 class="card-title">Upcoming Tasks</h2>
+      <ul class="upcoming-task-list" id="upcoming-task-list">
+        {% for task in upcoming_tasks|default([]) %}
+        <li class="upcoming-task-item">
+          <span class="task-icon">{{ task.icon }}</span>
+          <div class="task-meta">
+            <p class="task-title">{{ task.title }}</p>
+            <p class="task-type">{{ task.type }}</p>
+          </div>
+          <span class="task-due">{{ task.due_label }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </article>
+
+    <article class="dashboard-card notes-card">
+      <h2 class="card-title">Quick Notes</h2>
+      <textarea class="quick-notes-input" id="quick-notes-input" placeholder="Jot down a quick thought..."></textarea>
+      <div class="notes-footer">
+        <span class="notes-status" id="notes-status">Auto-saved</span>
+        <button class="btn btn-primary btn-sm" id="save-note-btn" type="button">+ Save note</button>
+      </div>
+    </article>
+  </section>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}
