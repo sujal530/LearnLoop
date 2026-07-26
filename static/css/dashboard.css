@@ -1,0 +1,129 @@
+/* ==========================================================================
+   LearnLoop — Dashboard
+   #dashboard-container : page wrapper
+   .dashboard-card       : summary / widget card
+   Depends on tokens defined in style.css — load style.css first.
+   ========================================================================== */
+
+#dashboard-container {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.dashboard-welcome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.dashboard-welcome h1 span { color: var(--loop-teal-600); }
+
+.dashboard-welcome .subtitle {
+  color: var(--slate-500);
+  font-size: 0.95rem;
+  margin-top: 4px;
+}
+
+.dashboard-streak {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--spark-amber-600);
+  background: var(--spark-amber-100);
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.dashboard-card {
+  background: var(--paper-0);
+  border: 1px solid var(--slate-100);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+
+.dashboard-card:hover { transform: translateY(-2px); }
+
+.dashboard-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dashboard-card-label {
+  font-size: 0.8rem;
+  color: var(--slate-500);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dashboard-card-value {
+  font-family: var(--font-mono);
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--ink-900);
+}
+
+.dashboard-card-footnote {
+  font-size: 0.8rem;
+  color: var(--slate-500);
+}
+
+/* Wide variant for the "continue your roadmap" / "next quiz" preview card */
+.dashboard-card--wide {
+  grid-column: span 2;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@media (max-width: 640px) {
+  .dashboard-card--wide {
+    grid-column: span 1;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* Recent activity list */
+.dashboard-activity-list { display: flex; flex-direction: column; }
+
+.dashboard-activity-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--slate-100);
+  font-size: 0.9rem;
+}
+.dashboard-activity-item:last-child { border-bottom: none; }
+
+.dashboard-activity-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--loop-teal-500);
+  flex-shrink: 0;
+}
+
+.dashboard-activity-time {
+  margin-left: auto;
+  color: var(--slate-300);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}

@@ -1,0 +1,143 @@
+/* ==========================================================================
+   LearnLoop — Roadmap & Tasks
+   #roadmap-container : page wrapper
+   .roadmap-node       : single milestone on the timeline
+   .task-item          : task row toggled by handleTaskStatusToggle (roadmap.js)
+   Depends on tokens defined in style.css — load style.css first.
+   ========================================================================== */
+
+#roadmap-container {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.roadmap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.roadmap-header .subtitle { color: var(--slate-500); font-size: 0.9rem; }
+
+/* ---------- Timeline: the "loop" connecting each milestone ---------- */
+.roadmap-timeline {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-left: 36px;
+}
+
+.roadmap-timeline::before {
+  content: "";
+  position: absolute;
+  left: 11px;
+  top: 8px;
+  bottom: 8px;
+  border-left: 2px dashed var(--slate-100);
+}
+
+.roadmap-node {
+  position: relative;
+  background: var(--paper-0);
+  border: 1px solid var(--slate-100);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: 18px 20px;
+}
+
+.roadmap-node::before {
+  content: "";
+  position: absolute;
+  left: -36px;
+  top: 22px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--paper-0);
+  border: 3px solid var(--slate-300);
+}
+
+.roadmap-node--completed::before {
+  border-color: var(--loop-teal-500);
+  background: var(--loop-teal-500);
+}
+
+.roadmap-node--active::before { border-color: var(--spark-amber-500); }
+
+.roadmap-node-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--ink-900);
+}
+
+.roadmap-node-description {
+  margin-top: 6px;
+  font-size: 0.9rem;
+  color: var(--slate-500);
+}
+
+.roadmap-node-meta {
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* ---------- Task list attached to each node ---------- */
+.task-list {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.task-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--paper-50);
+  font-size: 0.9rem;
+  transition: background var(--transition-base);
+}
+
+.task-item:hover { background: var(--loop-teal-100); }
+
+.task-checkbox {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--slate-300);
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  transition: background var(--transition-base), border-color var(--transition-base);
+}
+
+.task-item--completed .task-checkbox {
+  background: var(--loop-teal-500);
+  border-color: var(--loop-teal-500);
+}
+
+.task-item--completed .task-title {
+  color: var(--slate-300);
+  text-decoration: line-through;
+}
+
+.task-title { flex: 1; color: var(--ink-900); }
+
+.task-deadline {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--slate-500);
+}
+
+.task-deadline--overdue { color: var(--coral-500); font-weight: 600; }
