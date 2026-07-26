@@ -1,0 +1,18 @@
+<article class="dashboard-card chart-card learning-dna-card">
+  <div class="card-head">
+    <div>
+      <h2 class="card-title">Learning DNA</h2>
+      <p class="card-subtitle">Your profile vs. average</p>
+    </div>
+  </div>
+  <div class="chart-body chart-body-radar">
+    <canvas id="learning-dna-chart"
+      data-consistency="{{ learning_dna.consistency|default(80) }}"
+      data-understanding="{{ learning_dna.understanding|default(70) }}"
+      data-confidence="{{ learning_dna.confidence|default(75) }}"
+      data-retention="{{ learning_dna.retention|default(85) }}"
+      data-speed="{{ learning_dna.speed|default(60) }}"
+      data-focus="{{ learning_dna.focus|default(72) }}">
+    </canvas>
+  </div>
+</article>

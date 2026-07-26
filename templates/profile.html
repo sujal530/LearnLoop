@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+<div class="profile-container" id="profile-container">
+
+  <div class="page-head">
+    <div>
+      <h1 class="page-title">Profile</h1>
+      <p class="page-subtitle">Manage your personal information.</p>
+    </div>
+  </div>
+
+  <section class="dashboard-card profile-card">
+    <div class="profile-header">
+      <img src="{{ user.profile_image|default(url_for('static', filename='images/default-avatar.png')) }}"
+           alt="Profile photo" class="profile-image" id="profile-image">
+      <div>
+        <h2 class="profile-name" id="profile-name">{{ user.full_name|default('Full Name') }}</h2>
+        <p class="profile-email" id="profile-email">{{ user.email|default('email@example.com') }}</p>
+        <p class="profile-joined">Member since {{ user.created_at|default('—') }}</p>
+      </div>
+      <button class="btn btn-outline" id="change-photo-btn" type="button">Change photo</button>
+    </div>
+  </section>
+
+  <section class="dashboard-card profile-card">
+    <h2 class="card-title">Personal Information</h2>
+    <form class="profile-form" id="profile-form" method="POST" action="{{ url_for('profile') }}">
+      <div class="form-group">
+        <label for="full_name">Full name</label>
+        <input type="text" id="full_name" name="full_name" value="{{ user.full_name|default('') }}">
+      </div>
+      <div class="form-group">
+        <label for="email">Email address</label>
+        <input type="email" id="email" name="email" value="{{ user.email|default('') }}">
+      </div>
+      <div class="form-group">
+        <label for="bio">Bio</label>
+        <textarea id="bio" name="bio" placeholder="Tell us about yourself">{{ user.bio|default('') }}</textarea>
+      </div>
+      <button type="submit" class="btn btn-primary" id="save-profile-btn">Save changes</button>
+    </form>
+  </section>
+
+  <section class="dashboard-card profile-card">
+    <h2 class="card-title">Achievements</h2>
+    <div class="badge-grid" id="profile-badge-grid">
+      {% for badge in achievements|default([]) %}
+      <div class="badge-item">
+        <span class="badge-icon">{{ badge.icon }}</span>
+        <span class="badge-label">{{ badge.label }}</span>
+      </div>
+      {% else %}
+      <p class="empty-state">No achievements unlocked yet.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/profile.js') }}"></script>
+{% endblock %}

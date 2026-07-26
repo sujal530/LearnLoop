@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<div class="settings-container" id="settings-container">
+
+  <div class="page-head">
+    <div>
+      <h1 class="page-title">Settings</h1>
+      <p class="page-subtitle">Manage your account preferences.</p>
+    </div>
+  </div>
+
+  <section class="dashboard-card settings-card">
+    <h2 class="card-title">Account</h2>
+    <form class="settings-form" id="account-settings-form" method="POST" action="{{ url_for('settings') }}">
+      <div class="form-group">
+        <label for="email">Email address</label>
+        <input type="email" id="email" name="email" value="{{ user.email|default('') }}">
+      </div>
+      <div class="form-group">
+        <label for="current_password">Current password</label>
+        <input type="password" id="current_password" name="current_password" placeholder="Enter current password">
+      </div>
+      <div class="form-group">
+        <label for="new_password">New password</label>
+        <input type="password" id="new_password" name="new_password" placeholder="Enter new password">
+      </div>
+      <button type="submit" class="btn btn-primary" id="save-account-settings-btn">Save changes</button>
+    </form>
+  </section>
+
+  <section class="dashboard-card settings-card">
+    <h2 class="card-title">Preferences</h2>
+
+    <div class="settings-row">
+      <div>
+        <p class="settings-row-title">Dark mode</p>
+        <p class="settings-row-copy">Switch between light and dark themes.</p>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="dark-mode-toggle" checked>
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <div class="settings-row">
+      <div>
+        <p class="settings-row-title">Email notifications</p>
+        <p class="settings-row-copy">Get weekly progress summaries by email.</p>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="email-notifications-toggle" checked>
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <div class="settings-row">
+      <div>
+        <p class="settings-row-title">Push notifications</p>
+        <p class="settings-row-copy">Get reminders for upcoming tasks and quizzes.</p>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="push-notifications-toggle">
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+  </section>
+
+  <section class="dashboard-card settings-card settings-card-danger">
+    <h2 class="card-title">Danger Zone</h2>
+    <div class="settings-row">
+      <div>
+        <p class="settings-row-title">Delete account</p>
+        <p class="settings-row-copy">Permanently delete your account and all your data.</p>
+      </div>
+      <button class="btn btn-danger" id="delete-account-btn" type="button">Delete account</button>
+    </div>
+  </section>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}LearnLoop{% endblock %} | LearnLoop AI</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body class="app-body">
+
+  <div class="app-shell">
+
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <span class="brand-icon">✦</span>
+        <span class="brand-name">LearnLoop <span class="brand-accent">AI</span></span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.path == url_for('dashboard') %}nav-link-active{% endif %}">
+          <span class="nav-icon">▦</span><span>Dashboard</span>
+        </a>
+        <a href="{{ url_for('roadmap') }}" class="nav-link {% if request.path == url_for('roadmap') %}nav-link-active{% endif %}">
+          <span class="nav-icon">🗺</span><span>Roadmap</span>
+        </a>
+        <a href="{{ url_for('tasks') }}" class="nav-link {% if request.path == url_for('tasks') %}nav-link-active{% endif %}">
+          <span class="nav-icon">☑</span><span>Tasks</span>
+        </a>
+        <a href="{{ url_for('mentor') }}" class="nav-link {% if request.path == url_for('mentor') %}nav-link-active{% endif %}">
+          <span class="nav-icon">🧠</span><span>AI Mentor</span>
+        </a>
+        <a href="{{ url_for('quiz') }}" class="nav-link {% if request.path == url_for('quiz') %}nav-link-active{% endif %}">
+          <span class="nav-icon">?</span><span>Quiz</span>
+        </a>
+        <a href="{{ url_for('progress') }}" class="nav-link {% if request.path == url_for('progress') %}nav-link-active{% endif %}">
+          <span class="nav-icon">📊</span><span>Progress</span>
+        </a>
+        <a href="{{ url_for('profile') }}" class="nav-link {% if request.path == url_for('profile') %}nav-link-active{% endif %}">
+          <span class="nav-icon">☺</span><span>Profile</span>
+        </a>
+        <a href="{{ url_for('settings') }}" class="nav-link {% if request.path == url_for('settings') %}nav-link-active{% endif %}">
+          <span class="nav-icon">⚙</span><span>Settings</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-upgrade">
+        <p class="upgrade-title">Upgrade to Pro</p>
+        <p class="upgrade-copy">Unlock unlimited AI mentor sessions and advanced analytics.</p>
+        <button class="btn btn-upgrade" id="upgrade-btn" type="button">Upgrade now</button>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="main-panel">
+
+      <header class="topbar">
+        <button class="icon-btn sidebar-toggle" id="sidebar-toggle" type="button" aria-label="Toggle sidebar">☰</button>
+
+        <div class="topbar-search">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="global-search" placeholder="Search anything...">
+          <span class="search-kbd">⌘K</span>
+        </div>
+
+        <div class="topbar-actions">
+          <button class="icon-btn" id="theme-toggle" type="button" aria-label="Toggle theme">◐</button>
+          <button class="icon-btn" id="notifications-btn" type="button" aria-label="Notifications">
+            🔔<span class="badge-dot"></span>
+          </button>
+          <div class="user-menu" id="user-menu">
+            <span class="user-avatar">{{ session.get('user_initial', 'U') }}</span>
+            <span class="user-name">{{ session.get('user_name', 'guest') }}</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="page-content">
+        {% block content %}{% endblock %}
+      </main>
+
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Quiz{% endblock %}
+
+{% block content %}
+<div class="quiz-container" id="quiz-container"
+     data-question-id="{{ quiz_question.id|default('') }}"
+     data-correct-answer="{{ quiz_question.correct_answer|default('') }}">
+
+  <div class="page-head">
+    <div>
+      <h1 class="page-title">Quiz{% if quiz_question %}: {{ quiz_question.topic }}{% endif %}</h1>
+      <p class="page-subtitle">Test your understanding and earn XP.</p>
+    </div>
+    <div class="page-head-actions">
+      <span class="chip" id="quiz-progress-chip">Question {{ current_question_number|default(1) }} of {{ total_questions|default(10) }}</span>
+    </div>
+  </div>
+
+  <section class="dashboard-card quiz-card">
+    {% if quiz_question %}
+    <p class="quiz-question" id="quiz-question-text">{{ quiz_question.question }}</p>
+
+    <form id="quiz-form" method="POST" action="{{ url_for('quiz') }}">
+      <input type="hidden" name="question_id" value="{{ quiz_question.id }}">
+
+      <div class="quiz-options" id="quiz-options">
+        <label class="quiz-option" data-option="option_a">
+          <input type="radio" name="selected_answer" value="option_a" id="option-a">
+          <span class="quiz-option-letter">A</span>
+          <span class="quiz-option-text">{{ quiz_question.option_a }}</span>
+        </label>
+
+        <label class="quiz-option" data-option="option_b">
+          <input type="radio" name="selected_answer" value="option_b" id="option-b">
+          <span class="quiz-option-letter">B</span>
+          <span class="quiz-option-text">{{ quiz_question.option_b }}</span>
+        </label>
+
+        <label class="quiz-option" data-option="option_c">
+          <input type="radio" name="selected_answer" value="option_c" id="option-c">
+          <span class="quiz-option-letter">C</span>
+          <span class="quiz-option-text">{{ quiz_question.option_c }}</span>
+        </label>
+
+        <label class="quiz-option" data-option="option_d">
+          <input type="radio" name="selected_answer" value="option_d" id="option-d">
+          <span class="quiz-option-letter">D</span>
+          <span class="quiz-option-text">{{ quiz_question.option_d }}</span>
+        </label>
+      </div>
+
+      <div class="quiz-footer">
+        <span class="quiz-feedback" id="quiz-feedback"></span>
+        <button type="submit" class="btn btn-primary" id="submit-answer-btn">Submit Answer</button>
+      </div>
+    </form>
+    {% else %}
+    <p class="empty-state">No quiz questions available right now.</p>
+    {% endif %}
+  </section>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/quiz.js') }}"></script>
+{% endblock %}

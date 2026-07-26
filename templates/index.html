@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LearnLoop AI | Learn smarter, every day</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="landing-body">
+
+  <header class="landing-header">
+    <div class="sidebar-brand">
+      <span class="brand-icon">✦</span>
+      <span class="brand-name">LearnLoop <span class="brand-accent">AI</span></span>
+    </div>
+    <nav class="landing-nav">
+      <a href="{{ url_for('login') }}" class="btn btn-ghost" id="nav-login-btn">Log in</a>
+      <a href="{{ url_for('register') }}" class="btn btn-primary" id="nav-register-btn">Get started</a>
+    </nav>
+  </header>
+
+  <main class="landing-hero">
+    <div class="hero-content">
+      <p class="hero-eyebrow">AI-powered learning companion</p>
+      <h1 class="hero-title">Learn smarter, every day, with LearnLoop.</h1>
+      <p class="hero-subtitle">
+        Track your progress, follow a personalized roadmap, and get guidance
+        from your own AI mentor — all in one loop.
+      </p>
+      <div class="hero-actions">
+        <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg" id="hero-register-btn">Create free account</a>
+        <a href="{{ url_for('login') }}" class="btn btn-outline btn-lg" id="hero-login-btn">I already have an account</a>
+      </div>
+    </div>
+  </main>
+
+  <section class="landing-features" id="landing-features">
+    <article class="feature-card">
+      <span class="feature-icon">🗺</span>
+      <h3 class="feature-title">Personalized Roadmap</h3>
+      <p class="feature-copy">A learning path tailored to your goals and pace.</p>
+    </article>
+    <article class="feature-card">
+      <span class="feature-icon">🧠</span>
+      <h3 class="feature-title">AI Mentor</h3>
+      <p class="feature-copy">Ask questions and get instant, contextual guidance.</p>
+    </article>
+    <article class="feature-card">
+      <span class="feature-icon">📊</span>
+      <h3 class="feature-title">Progress Tracking</h3>
+      <p class="feature-copy">Visualize your growth with streaks, XP, and analytics.</p>
+    </article>
+  </section>
+
+  <footer class="landing-footer">
+    <p>&copy; 2026 LearnLoop AI. All rights reserved.</p>
+  </footer>
+
+</body>
+</html>
