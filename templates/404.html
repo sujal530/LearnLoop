@@ -19,8 +19,9 @@
     <p class="error-copy">The page you're looking for doesn't exist or may have moved.</p>
 
     <div class="error-actions">
-      <a href="{{ url_for('dashboard') }}" class="btn btn-primary" id="error-dashboard-link">Back to Dashboard</a>
-      <a href="{{ url_for('index') }}" class="btn btn-outline" id="error-home-link">Go to Homepage</a>
+      <!-- Updated endpoint names to include blueprint prefixes -->
+      <a href="{{ url_for('dashboard.dashboard') }}" class="btn btn-primary" id="error-dashboard-link">Back to Dashboard</a>
+      <a href="{{ url_for('auth.login') }}" class="btn btn-outline" id="error-home-link">Go to Homepage</a>
     </div>
   </div>
 

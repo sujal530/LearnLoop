@@ -22,29 +22,29 @@
       </div>
 
       <nav class="sidebar-nav">
-        <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.path == url_for('dashboard') %}nav-link-active{% endif %}">
+        <a href="{{ url_for('dashboard.dashboard') }}" class="nav-link {% if request.path == url_for('dashboard.dashboard') %}nav-link-active{% endif %}">
           <span class="nav-icon">▦</span><span>Dashboard</span>
         </a>
-        <a href="{{ url_for('roadmap') }}" class="nav-link {% if request.path == url_for('roadmap') %}nav-link-active{% endif %}">
+        <a href="{{ url_for('roadmap.roadmap') }}" class="nav-link {% if request.path == url_for('roadmap.roadmap') %}nav-link-active{% endif %}">
           <span class="nav-icon">🗺</span><span>Roadmap</span>
         </a>
-        <a href="{{ url_for('tasks') }}" class="nav-link {% if request.path == url_for('tasks') %}nav-link-active{% endif %}">
+        <a href="{{ url_for('tasks.tasks') }}" class="nav-link {% if request.path == url_for('tasks.tasks') %}nav-link-active{% endif %}">
           <span class="nav-icon">☑</span><span>Tasks</span>
         </a>
-        <a href="{{ url_for('mentor') }}" class="nav-link {% if request.path == url_for('mentor') %}nav-link-active{% endif %}">
+        <a href="{{ url_for('mentor.mentor') }}" class="nav-link {% if request.path == url_for('mentor.mentor') %}nav-link-active{% endif %}">
           <span class="nav-icon">🧠</span><span>AI Mentor</span>
         </a>
-        <a href="{{ url_for('quiz') }}" class="nav-link {% if request.path == url_for('quiz') %}nav-link-active{% endif %}">
+        <a href="{{ url_for('quiz.quiz') }}" class="nav-link {% if request.path == url_for('quiz.quiz') %}nav-link-active{% endif %}">
           <span class="nav-icon">?</span><span>Quiz</span>
         </a>
-        <a href="{{ url_for('progress') }}" class="nav-link {% if request.path == url_for('progress') %}nav-link-active{% endif %}">
+        <a href="{{ url_for('progress.progress') }}" class="nav-link {% if request.path == url_for('progress.progress') %}nav-link-active{% endif %}">
           <span class="nav-icon">📊</span><span>Progress</span>
         </a>
-        <a href="{{ url_for('profile') }}" class="nav-link {% if request.path == url_for('profile') %}nav-link-active{% endif %}">
+        <a href="{{ url_for('profile.profile') }}" class="nav-link {% if request.path == url_for('profile.profile') %}nav-link-active{% endif %}">
           <span class="nav-icon">☺</span><span>Profile</span>
         </a>
-        <a href="{{ url_for('settings') }}" class="nav-link {% if request.path == url_for('settings') %}nav-link-active{% endif %}">
-          <span class="nav-icon">⚙</span><span>Settings</span>
+        <a href="{{ url_for('auth.logout') }}" class="nav-link">
+          <span class="nav-icon">🚪</span><span>Log out</span>
         </a>
       </nav>
 
@@ -74,7 +74,7 @@
           </button>
           <div class="user-menu" id="user-menu">
             <span class="user-avatar">{{ session.get('user_initial', 'U') }}</span>
-            <span class="user-name">{{ session.get('user_name', 'guest') }}</span>
+            <span class="user-name">{{ session.get('user_name', 'Guest') }}</span>
           </div>
         </div>
       </header>

@@ -1,119 +1,96 @@
 import sqlite3
-
-from flask import Blueprint, flash, redirect, render_template, session, url_for
-
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from werkzeug.security import generate_password_hash, check_password_hash
 from config import Config
-from utils.decorators import login_required
 
-dashboard_bp = Blueprint("dashboard", __name__)
-
+auth_bp = Blueprint("auth", __name__)
 
 def get_db():
     conn = sqlite3.connect(Config.DATABASE)
     conn.row_factory = sqlite3.Row
     return conn
 
+def get_users_columns(conn):
+    cursor = conn.execute("PRAGMA table_info(users)")
+    return [column[1] for column in cursor.fetchall()]
 
-@dashboard_bp.route("/dashboard")
-@login_required
-def dashboard():
-    user_id = session["user_id"]
-    conn = None
-
-    try:
+@auth_bp.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        email = request.form.get("email")
+        password = request.form.get("password")
+        
         conn = get_db()
+        user = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+        conn.close()
 
-        # Fetch logged-in user
-        user = conn.execute(
-            "SELECT * FROM users WHERE id = ?", (user_id,)
-        ).fetchone()
+        if user and check_password_hash(user["password"], password):
+            session["user_id"] = user["id"]
+            flash("Logged in successfully!", "success")
+            return redirect(url_for("dashboard.dashboard"))
+        else:
+            flash("Invalid email or password.", "danger")
 
-        if not user:
-            session.clear()
-            flash("Session expired. Please log in again.", "warning")
+    return render_template("login.html")
+
+@auth_bp.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        # Capture form values cleanly
+        full_name = request.form.get("full_name") or request.form.get("username") or ""
+        email = request.form.get("email") or ""
+        password = request.form.get("password") or ""
+        confirm_password = request.form.get("confirm_password") or ""
+
+        # Print to VS Code terminal to inspect input values
+        print(f"\n--- REGISTER ATTEMPT ---")
+        print(f"Name: '{full_name}' | Email: '{email}'")
+
+        # 1. Validation: Required fields
+        if not email.strip() or not password.strip():
+            flash("Email and password are required.", "warning")
+            return render_template("register.html")
+
+        # 2. Validation: Passwords match
+        if confirm_password and password != confirm_password:
+            flash("Passwords do not match.", "warning")
+            print("FAILED: Password mismatch")
+            return render_template("register.html")
+
+        hashed_pw = generate_password_hash(password)
+
+        conn = get_db()
+        try:
+            # Dynamically match column names in the 'users' table
+            columns = get_users_columns(conn)
+
+            if "full_name" in columns:
+                conn.execute("INSERT INTO users (full_name, email, password) VALUES (?, ?, ?)", (full_name, email, hashed_pw))
+            elif "name" in columns:
+                conn.execute("INSERT INTO users (name, email, password) VALUES (?, ?, ?)", (full_name, email, hashed_pw))
+            elif "username" in columns:
+                conn.execute("INSERT INTO users (username, email, password) VALUES (?, ?, ?)", (full_name, email, hashed_pw))
+            else:
+                conn.execute("INSERT INTO users (email, password) VALUES (?, ?)", (email, hashed_pw))
+
+            conn.commit()
+            print("SUCCESS: Account created! Redirecting to login...\n")
+            flash("Account created! Please log in.", "success")
             return redirect(url_for("auth.login"))
 
-        # Fetch most recent goal
-        goal = conn.execute(
-            """
-            SELECT * FROM goals
-            WHERE user_id = ?
-            ORDER BY created_at DESC
-            LIMIT 1
-            """,
-            (user_id,),
-        ).fetchone()
-
-        # Fetch task counts
-        completed_tasks = conn.execute(
-            "SELECT COUNT(*) FROM tasks WHERE user_id = ? AND completed = 1",
-            (user_id,),
-        ).fetchone()[0]
-
-        total_tasks = conn.execute(
-            "SELECT COUNT(*) FROM tasks WHERE user_id = ?",
-            (user_id,),
-        ).fetchone()[0]
-
-        # Fetch additional summary counts
-        roadmap_count = conn.execute(
-            "SELECT COUNT(*) FROM roadmaps WHERE user_id = ?",
-            (user_id,),
-        ).fetchone()[0]
-
-        quiz_count = conn.execute(
-            "SELECT COUNT(*) FROM quiz_history WHERE user_id = ?",
-            (user_id,),
-        ).fetchone()[0]
-
-        # Fetch existing progress row
-        progress = conn.execute(
-            "SELECT * FROM progress WHERE user_id = ?", (user_id,)
-        ).fetchone()
-
-        if not progress:
-            # Create a fresh progress row for this user
-            conn.execute(
-                """
-                INSERT INTO progress (user_id, completed_tasks, total_tasks, study_hours, streak)
-                VALUES (?, ?, ?, ?, ?)
-                """,
-                (user_id, completed_tasks, total_tasks, 0, 0),
-            )
-            conn.commit()
-        else:
-            # Synchronize live task counts into the progress table
-            conn.execute(
-                """
-                UPDATE progress
-                SET completed_tasks = ?,
-                    total_tasks     = ?
-                WHERE user_id = ?
-                """,
-                (completed_tasks, total_tasks, user_id),
-            )
-            conn.commit()
-
-        # Reload progress row so template always receives the latest values
-        progress = conn.execute(
-            "SELECT * FROM progress WHERE user_id = ?", (user_id,)
-        ).fetchone()
-
-        return render_template(
-            "dashboard.html",
-            user=user,
-            goal=goal,
-            progress=progress,
-            completed_tasks=completed_tasks,
-            total_tasks=total_tasks,
-            roadmap_count=roadmap_count,
-            quiz_count=quiz_count,
-        )
-
-    except sqlite3.Error:
-        flash("A database error occurred. Please try again.", "danger")
-        return redirect(url_for("auth.login"))
-
-    finally:
-        if conn:
+        except sqlite3.IntegrityError as e:
+            print(f"FAILED: DB IntegrityError - {e}\n")
+            flash("That email is already registered. Try logging in instead.", "warning")
+        except Exception as e:
+            print(f"FAILED: Unexpected Error - {e}\n")
+            flash(f"Error creating account: {e}", "danger")
+        finally:
             conn.close()
+
+    return render_template("register.html")
+
+@auth_bp.route("/logout")
+def logout():
+    session.clear()
+    flash("You have been logged out.", "info")
+    return redirect(url_for("auth.login"))

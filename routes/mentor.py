@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, jsonify, session, redirec
 import google.generativeai as genai
 from config import Config
 
+
 mentor_bp = Blueprint("mentor", __name__)
 
 # -----------------------------
