@@ -85,4 +85,3 @@ class Task:
             "due_date": self.due_date,
             "created_at": self.created_at
         }
-        
