@@ -74,13 +74,12 @@
 
   </div>
 
-  <!-- New / Edit Task Modal -->
   <div class="modal-overlay" id="task-modal-overlay">
     <div class="dashboard-card modal-card" id="task-modal">
       <h2 class="card-title" id="modal-title">New Task</h2>
-      
+
       <form id="task-form" method="POST" action="{{ url_for('tasks.tasks') }}">
-        <!-- Hidden input to store task ID during edits -->
+
         <input type="hidden" id="task_id" name="id">
 
         <div class="form-group">
@@ -111,6 +110,7 @@
           <button type="button" class="btn btn-ghost" id="cancel-task-btn">Cancel</button>
           <button type="submit" class="btn btn-primary" id="save-task-btn">Save Task</button>
         </div>
+
       </form>
     </div>
   </div>
