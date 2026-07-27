@@ -2,6 +2,10 @@
 
 {% block title %}Tasks{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tasks.css') }}">
+{% endblock %}
+
 {% block content %}
 <div class="tasks-container" id="tasks-container">
 
@@ -17,71 +21,66 @@
 
   <div class="task-board" id="task-board">
 
-    <!-- Pending -->
+    <!-- Pending Column -->
     <section class="task-column">
       <h2 class="task-column-title">Pending</h2>
       <ul class="task-list" id="pending-task-list">
-        {% for task in tasks|default([]) %}
-          {% if task.status == 'pending' %}
-          <li class="dashboard-card task-card" data-task-id="{{ task.id }}">
-            <p class="task-card-title">{{ task.title }}</p>
-            <p class="task-card-desc">{{ task.description }}</p>
-            <div class="task-card-footer">
-              <span class="task-due">{{ task.deadline }}</span>
-              <button class="icon-btn task-edit-btn" type="button" aria-label="Edit task">✎</button>
-            </div>
-          </li>
-          {% endif %}
+        {% for task in tasks|default([]) if task.status == 'pending' %}
+        <li class="dashboard-card task-card" data-task-id="{{ task.id }}">
+          <p class="task-card-title">{{ task.title }}</p>
+          <p class="task-card-desc">{{ task.description | default('', true) }}</p>
+          <div class="task-card-footer">
+            <span class="task-due">{{ task.deadline | default('', true) }}</span>
+            <button class="icon-btn task-edit-btn" type="button" aria-label="Edit task">✎</button>
+          </div>
+        </li>
         {% endfor %}
       </ul>
     </section>
 
-    <!-- In Progress -->
+    <!-- In Progress Column -->
     <section class="task-column">
       <h2 class="task-column-title">In Progress</h2>
       <ul class="task-list" id="in-progress-task-list">
-        {% for task in tasks|default([]) %}
-          {% if task.status == 'in_progress' %}
-          <li class="dashboard-card task-card" data-task-id="{{ task.id }}">
-            <p class="task-card-title">{{ task.title }}</p>
-            <p class="task-card-desc">{{ task.description }}</p>
-            <div class="task-card-footer">
-              <span class="task-due">{{ task.deadline }}</span>
-              <button class="icon-btn task-edit-btn" type="button" aria-label="Edit task">✎</button>
-            </div>
-          </li>
-          {% endif %}
+        {% for task in tasks|default([]) if task.status == 'in_progress' %}
+        <li class="dashboard-card task-card" data-task-id="{{ task.id }}">
+          <p class="task-card-title">{{ task.title }}</p>
+          <p class="task-card-desc">{{ task.description | default('', true) }}</p>
+          <div class="task-card-footer">
+            <span class="task-due">{{ task.deadline | default('', true) }}</span>
+            <button class="icon-btn task-edit-btn" type="button" aria-label="Edit task">✎</button>
+          </div>
+        </li>
         {% endfor %}
       </ul>
     </section>
 
-    <!-- Completed -->
+    <!-- Completed Column -->
     <section class="task-column">
       <h2 class="task-column-title">Completed</h2>
       <ul class="task-list" id="completed-task-list">
-        {% for task in tasks|default([]) %}
-          {% if task.status == 'completed' %}
-          <li class="dashboard-card task-card task-card-done" data-task-id="{{ task.id }}">
-            <p class="task-card-title">{{ task.title }}</p>
-            <p class="task-card-desc">{{ task.description }}</p>
-            <div class="task-card-footer">
-              <span class="task-due">{{ task.deadline }}</span>
-              <button class="icon-btn task-edit-btn" type="button" aria-label="Edit task">✎</button>
-            </div>
-          </li>
-          {% endif %}
+        {% for task in tasks|default([]) if task.status == 'completed' %}
+        <li class="dashboard-card task-card task-card-done" data-task-id="{{ task.id }}">
+          <p class="task-card-title">{{ task.title }}</p>
+          <p class="task-card-desc">{{ task.description | default('', true) }}</p>
+          <div class="task-card-footer">
+            <span class="task-due">{{ task.deadline | default('', true) }}</span>
+            <button class="icon-btn task-edit-btn" type="button" aria-label="Edit task">✎</button>
+          </div>
+        </li>
         {% endfor %}
       </ul>
     </section>
 
   </div>
 
-  <!-- New / Edit Task Modal -->
   <div class="modal-overlay" id="task-modal-overlay">
     <div class="dashboard-card modal-card" id="task-modal">
-      <h2 class="card-title">New Task</h2>
+      <h2 class="card-title" id="modal-title">New Task</h2>
 
       <form id="task-form" method="POST" action="{{ url_for('tasks.tasks') }}">
+
+        <input type="hidden" id="task_id" name="id">
 
         <div class="form-group">
           <label for="task_title">Title</label>

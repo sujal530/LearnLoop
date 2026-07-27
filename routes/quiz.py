@@ -1,5 +1,13 @@
-from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for
 import sqlite3
+from flask import (
+    Blueprint,
+    render_template,
+    request,
+    jsonify,
+    session,
+    redirect,
+    url_for,
+)
 import google.generativeai as genai
 from config import Config
 
@@ -25,11 +33,11 @@ def get_db():
 # -----------------------------
 @quiz_bp.route("/quiz")
 def quiz():
-
     if "user_id" not in session:
         return redirect(url_for("auth.login"))
 
-    return render_template("quiz.html")
+    # Passing quiz_question=None prevents Jinja2 UndefinedError in quiz.html
+    return render_template("quiz.html", quiz_question=None)
 
 
 # -----------------------------
@@ -37,13 +45,12 @@ def quiz():
 # -----------------------------
 @quiz_bp.route("/quiz/generate", methods=["POST"])
 def generate_quiz():
-
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
-    data = request.get_json()
+    data = request.get_json() or {}
 
-    topic = data.get("topic", "")
+    topic = data.get("topic", "General Knowledge")
     difficulty = data.get("difficulty", "Beginner")
 
     prompt = f"""
@@ -68,18 +75,11 @@ Do not include explanations.
 """
 
     try:
-
         response = model.generate_content(prompt)
-
-        return jsonify({
-            "quiz": response.text
-        })
+        return jsonify({"quiz": response.text})
 
     except Exception as e:
-
-        return jsonify({
-            "error": str(e)
-        }), 500
+        return jsonify({"error": str(e)}), 500
 
 
 # -----------------------------
@@ -87,19 +87,23 @@ Do not include explanations.
 # -----------------------------
 @quiz_bp.route("/quiz/submit", methods=["POST"])
 def submit_quiz():
-
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
-    data = request.get_json()
+    data = request.get_json() or {}
 
-    score = int(data.get("score", 0))
-    total = int(data.get("total", 5))
+    try:
+        score = int(data.get("score", 0))
+        total = int(data.get("total", 5))
+    except (ValueError, TypeError):
+        score, total = 0, 5
 
-    percentage = round((score / total) * 100)
+    # Prevent division by zero
+    percentage = round((score / total) * 100) if total > 0 else 0
 
     conn = get_db()
 
+    # Ensure table exists
     conn.execute("""
         CREATE TABLE IF NOT EXISTS quiz_history(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -110,6 +114,7 @@ def submit_quiz():
         )
     """)
 
+    # Record history
     conn.execute("""
         INSERT INTO quiz_history(
             user_id,
@@ -118,36 +123,25 @@ def submit_quiz():
             percentage
         )
         VALUES(?,?,?,?)
-    """,
-    (
-        session["user_id"],
-        score,
-        total,
-        percentage
-    ))
+    """, (session["user_id"], score, total, percentage))
 
     conn.commit()
 
+    # Update user completed tasks in progress table
     progress = conn.execute("""
         SELECT *
         FROM progress
         WHERE user_id=?
-    """,
-    (session["user_id"],)).fetchone()
+    """, (session["user_id"],)).fetchone()
 
     if progress:
-
-        study_hours = progress["study_hours"]
-        streak = progress["streak"]
-
         conn.execute("""
             UPDATE progress
             SET completed_tasks = completed_tasks + 1
             WHERE user_id=?
-        """,
-        (session["user_id"],))
+        """, (session["user_id"],))
+        conn.commit()
 
-    conn.commit()
     conn.close()
 
     return jsonify({
@@ -159,11 +153,10 @@ def submit_quiz():
 
 
 # -----------------------------
-# Quiz History
+# Quiz History (HTML Page)
 # -----------------------------
 @quiz_bp.route("/quiz/history")
 def quiz_history():
-
     if "user_id" not in session:
         return redirect(url_for("auth.login"))
 
@@ -174,45 +167,39 @@ def quiz_history():
         FROM quiz_history
         WHERE user_id=?
         ORDER BY id DESC
-    """,
-    (session["user_id"],)).fetchall()
+    """, (session["user_id"],)).fetchall()
 
     conn.close()
 
-    return render_template(
-        "quiz_history.html",
-        history=history
-    )
+    return render_template("quiz_history.html", history=history)
 
 
 # -----------------------------
-# Quiz API
+# Quiz History (JSON API)
 # -----------------------------
 @quiz_bp.route("/api/quiz/history")
 def quiz_api():
-
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
     conn = get_db()
 
     history = conn.execute("""
-        SELECT score,total,percentage
+        SELECT score, total, percentage
         FROM quiz_history
         WHERE user_id=?
         ORDER BY id DESC
-    """,
-    (session["user_id"],)).fetchall()
+    """, (session["user_id"],)).fetchall()
 
     conn.close()
 
-    result = []
-
-    for row in history:
-        result.append({
+    result = [
+        {
             "score": row["score"],
             "total": row["total"],
             "percentage": row["percentage"]
-        })
+        }
+        for row in history
+    ]
 
     return jsonify(result)

@@ -2,6 +2,10 @@
 
 {% block title %}AI Mentor{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/mentor.css') }}">
+{% endblock %}
+
 {% block content %}
 <div class="mentor-container" id="mentor-container">
 
@@ -27,7 +31,8 @@
       {% endfor %}
     </div>
 
-    <form class="mentor-input-row" id="mentor-form" method="POST" action="{{ url_for('mentor') }}">
+    <!-- Fixed action url to point to the blueprint endpoint 'mentor.mentor' -->
+    <form class="mentor-input-row" id="mentor-form" method="POST" action="{{ url_for('mentor.mentor') }}">
       <input type="text" id="mentor-input" name="message" placeholder="Ask your mentor a question..." autocomplete="off" required>
       <button type="submit" class="btn btn-primary" id="send-mentor-message-btn">Send</button>
     </form>
