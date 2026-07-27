@@ -2,6 +2,10 @@
 
 {% block title %}Dashboard{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
 {% block content %}
 <div class="dashboard-container" id="dashboard-container">
 
@@ -20,7 +24,7 @@
     <article class="dashboard-card stat-card">
       <div class="stat-icon stat-icon-pink">↗</div>
       <span class="stat-trend stat-trend-up">↗ +{{ completion_delta|default('8') }}%</span>
-      <p class="stat-value">{{ completion_percent|default('78') }}%</p>
+      <p class="stat-value" id="overall-completion-value">{{ completion_percent|default('78') }}%</p>
       <p class="stat-label">Completion</p>
     </article>
 
@@ -119,8 +123,11 @@
     </article>
 
     <article class="dashboard-card list-card">
-      <h2 class="card-title">Upcoming Tasks</h2>
-      <ul class="upcoming-task-list" id="upcoming-task-list">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h2 class="card-title" style="margin: 0;">Upcoming Tasks</h2>
+        <span class="chip" id="upcoming-tasks-count">0</span>
+      </div>
+      <ul class="upcoming-task-list" id="upcoming-tasks-list">
         {% for task in upcoming_tasks|default([]) %}
         <li class="upcoming-task-item">
           <span class="task-icon">{{ task.icon }}</span>
@@ -148,6 +155,15 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<!-- 1. Chart.js Library FIRST -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- 2. Global application helpers -->
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+<!-- 3. Chart renderer script -->
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+
+<!-- 4. Main dashboard runner LAST -->
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}

@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, redirect, url_for, session
 
 from config import Config
 from database.init_db import init_db
@@ -18,9 +18,11 @@ def create_app() -> Flask:
     app = Flask(__name__)
     app.config.from_object(Config)
 
+    # Initialize Database
     with app.app_context():
         init_db()
 
+    # Register Blueprints
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(roadmap_bp)
@@ -31,6 +33,19 @@ def create_app() -> Flask:
     app.register_blueprint(profile_bp)
     app.register_blueprint(learning_dna_bp)
 
+    # -------------------------------------------------------------
+    # Root Route
+    # Directs users to Dashboard if logged in, or Login if not.
+    # -------------------------------------------------------------
+    @app.route("/")
+    def index():
+        if "user_id" in session:
+            return redirect(url_for("dashboard.dashboard"))
+        return redirect(url_for("auth.login"))
+
+    # -------------------------------------------------------------
+    # Error Handlers
+    # -------------------------------------------------------------
     @app.errorhandler(404)
     def not_found(error):
         return render_template("404.html"), 404

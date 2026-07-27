@@ -62,9 +62,18 @@ def dashboard():
                  progress["total_tasks"]) * 100
             )
 
+    # Fallback/default data for learning_dna.html
+    learning_dna_data = {
+        "consistency": 80,
+        "velocity": 75,
+        "retention": 85,
+        "focus_score": 90
+    }
+
     return render_template(
         "dashboard.html",
         user=user,
         goal=goal,
-        progress=dashboard_data
+        progress=dashboard_data,
+        learning_dna=learning_dna_data
     )

@@ -3,27 +3,38 @@
  * -----------------------------------------------------------------------
  * Populates #dashboard-container: summary stats, the upcoming tasks list,
  * and the charts defined in charts.js.
- *
- * DEPENDS ON (must load before this file):
- *   - script.js  -> fetchJson(), getEmbeddedData()
- *   - charts.js  -> initDashboardCharts()
- *
- * DATA SOURCE
- * Tries embedded JSON first (<script type="application/json" id="dashboard-data">
- * rendered by Flask/Jinja on GET /dashboard), then falls back to fetching
- * /progress and /tasks directly. This avoids requiring a new API route.
- *
- * SCOPE NOTE: "streak" and "study hours" appear in the pitch deck, but need a
- * per-day activity log that isn't in the current schema (Progress only has
- * topic/completion, Tasks only has status/deadline — no completed_at date).
- * Those two are left out rather than faked; everything below is computed
- * from real Progress/Tasks columns.
- *
- * IDS ADDED OUT OF NECESSITY (not in the shared id list, which has no ids
- * for dashboard stat widgets): overall-completion-value, upcoming-tasks-count,
- * upcoming-tasks-list. All three must exist inside #dashboard-container.
  */
 
+// Safety Fallbacks for helper functions if script.js isn't loaded first
+if (typeof getEmbeddedData !== 'function') {
+    window.getEmbeddedData = function(id) {
+        const scriptTag = document.getElementById(id);
+        if (scriptTag && scriptTag.textContent) {
+            try { 
+                return JSON.parse(scriptTag.textContent); 
+            } catch (e) { 
+                return null; 
+            }
+        }
+        return null;
+    };
+}
+
+if (typeof fetchJson !== 'function') {
+    window.fetchJson = async function(url) {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) return null;
+            return await response.json();
+        } catch (e) {
+            return null;
+        }
+    };
+}
+
+/**
+ * Fetches dashboard data from embedded JSON script tag or falls back to APIs.
+ */
 async function loadDashboardData() {
     const embeddedData = getEmbeddedData('dashboard-data');
     if (embeddedData) {
@@ -56,7 +67,7 @@ function calculateOverallCompletion(progressData) {
 }
 
 /**
- * Renders the small summary stat cards inside #dashboard-container.
+ * Renders the summary stat cards inside #dashboard-container.
  */
 function renderSummaryStats(dashboardData) {
     const overallCompletionElement = document.getElementById('overall-completion-value');
@@ -65,7 +76,7 @@ function renderSummaryStats(dashboardData) {
     const overallCompletion = calculateOverallCompletion(dashboardData.progress);
     const upcomingTasks = (dashboardData.tasks || []).filter((task) => task.status !== 'completed');
 
-    if (overallCompletionElement) {
+    if (overallCompletionElement && overallCompletion > 0) {
         overallCompletionElement.textContent = `${overallCompletion}%`;
     }
 
@@ -86,38 +97,35 @@ function renderUpcomingTasksList(taskData) {
 
     const upcomingTasks = (taskData || [])
         .filter((task) => task.status !== 'completed')
-        .sort((firstTask, secondTask) => new Date(firstTask.deadline) - new Date(secondTask.deadline));
+        .sort((firstTask, secondTask) => new Date(firstTask.deadline || 0) - new Date(secondTask.deadline || 0));
 
-    upcomingTasksList.innerHTML = '';
+    // Only overwrite list if API returned tasks
+    if (upcomingTasks.length > 0) {
+        upcomingTasksList.innerHTML = '';
+        upcomingTasks.forEach((task) => {
+            const taskItem = document.createElement('li');
+            taskItem.className = 'upcoming-task-item';
 
-    if (upcomingTasks.length === 0) {
-        const emptyStateItem = document.createElement('li');
-        emptyStateItem.className = 'task-item task-item-empty';
-        emptyStateItem.textContent = 'No upcoming tasks. You are all caught up!';
-        upcomingTasksList.appendChild(emptyStateItem);
-        return;
+            const taskTitle = document.createElement('span');
+            taskTitle.className = 'task-title';
+            taskTitle.textContent = task.title;
+
+            const taskDeadline = document.createElement('span');
+            taskDeadline.className = 'task-due';
+            taskDeadline.textContent = task.deadline
+                ? new Date(task.deadline).toLocaleDateString()
+                : 'No deadline';
+
+            taskItem.appendChild(taskTitle);
+            taskItem.appendChild(taskDeadline);
+            upcomingTasksList.appendChild(taskItem);
+        });
     }
-
-    upcomingTasks.forEach((task) => {
-        const taskItem = document.createElement('li');
-        taskItem.className = 'task-item';
-
-        const taskTitle = document.createElement('span');
-        taskTitle.className = 'task-item-title';
-        taskTitle.textContent = task.title;
-
-        const taskDeadline = document.createElement('span');
-        taskDeadline.className = 'task-item-deadline';
-        taskDeadline.textContent = task.deadline
-            ? new Date(task.deadline).toLocaleDateString()
-            : 'No deadline';
-
-        taskItem.appendChild(taskTitle);
-        taskItem.appendChild(taskDeadline);
-        upcomingTasksList.appendChild(taskItem);
-    });
 }
 
+/**
+ * Initializes all dashboard components safely.
+ */
 async function initDashboardPage() {
     const dashboardContainer = document.getElementById('dashboard-container');
     if (!dashboardContainer) {
@@ -129,8 +137,15 @@ async function initDashboardPage() {
     renderSummaryStats(dashboardData);
     renderUpcomingTasksList(dashboardData.tasks);
 
-    if (typeof initDashboardCharts === 'function') {
-        initDashboardCharts(dashboardData);
+    // Safely execute chart drawing if Chart.js and helper are loaded
+    if (typeof Chart !== 'undefined' && typeof initDashboardCharts === 'function') {
+        try {
+            initDashboardCharts(dashboardData);
+        } catch (err) {
+            console.error('Failed to initialize charts:', err);
+        }
+    } else {
+        console.warn('Chart.js or initDashboardCharts function is not ready yet.');
     }
 }
 
