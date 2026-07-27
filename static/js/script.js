@@ -1,28 +1,14 @@
 /**
  * script.js
  * -----------------------------------------------------------------------
- * Shared utilities loaded on every page (via the base template, before
- * charts.js / dashboard.js / quiz.js / roadmap.js). Provides:
- *   - fetchJson()       generic JSON fetch wrapper
- *   - getEmbeddedData() reads server-rendered JSON out of a page
- *   - showToast()       lightweight notification helper
- * Also wires up the login and register forms.
- *
- * IDS USED (from the shared id list): email, password, login-btn, register-btn
- *
- * ID ADDED OUT OF NECESSITY: full-name
- *   The shared id list has no id covering the Users.full_name column, so the
- *   register form needs one extra field. #full-name was added to
- *   templates/register.html to fill that gap; every other id below already
- *   existed in the shared list.
+ * Shared utilities loaded on every page.
+ * Provides helper functions for toast notifications and embedded data.
  */
 
 const apiBaseUrl = '';
 
 /**
  * Wrapper around fetch() that sends/expects JSON and normalizes errors.
- * @param {string} url
- * @param {RequestInit & {body?: any}} options
  */
 async function fetchJson(url, options = {}) {
     const requestOptions = {
@@ -51,10 +37,7 @@ async function fetchJson(url, options = {}) {
 }
 
 /**
- * Reads server-rendered JSON embedded by Jinja, e.g.:
- *   <script type="application/json" id="dashboard-data">{{ dashboard_data | tojson }}</script>
- * Returns null if the tag is missing/invalid so callers can fall back to fetchJson().
- * @param {string} elementId
+ * Reads server-rendered JSON embedded by Jinja.
  */
 function getEmbeddedData(elementId) {
     const dataElement = document.getElementById(elementId);
@@ -71,11 +54,7 @@ function getEmbeddedData(elementId) {
 }
 
 /**
- * Shows a small dismissible toast message. Expects a #toast-container element
- * on the page (add <div id="toast-container"></div> once in base.html).
- * Falls back to console output if that container is missing.
- * @param {string} message
- * @param {'info'|'error'} toastType
+ * Shows a small dismissible toast message.
  */
 function showToast(message, toastType = 'info') {
     const toastContainer = document.getElementById('toast-container');
@@ -93,85 +72,23 @@ function showToast(message, toastType = 'info') {
 }
 
 /**
- * Wires up the login form (#email, #password, #login-btn) if present on the page.
+ * Validates registration form passwords client-side without blocking submission.
  */
-function initLoginForm() {
-    const loginButton = document.getElementById('login-btn');
-    if (!loginButton) {
-        return;
-    }
+function initRegisterValidation() {
+    const registerForm = document.getElementById('register-form');
+    if (!registerForm) return;
 
-    loginButton.addEventListener('click', async (event) => {
-        event.preventDefault();
+    registerForm.addEventListener('submit', (event) => {
+        const password = document.getElementById('password')?.value;
+        const confirmPassword = document.getElementById('confirm_password')?.value;
 
-        const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('password');
-        const emailValue = emailInput ? emailInput.value.trim() : '';
-        const passwordValue = passwordInput ? passwordInput.value : '';
-
-        if (!emailValue || !passwordValue) {
-            showToast('Please enter your email and password.', 'error');
-            return;
-        }
-
-        loginButton.disabled = true;
-
-        try {
-            await fetchJson('/login', {
-                method: 'POST',
-                body: { email: emailValue, password: passwordValue }
-            });
-            window.location.href = '/dashboard';
-        } catch (error) {
-            showToast(error.message || 'Login failed. Please try again.', 'error');
-        } finally {
-            loginButton.disabled = false;
-        }
-    });
-}
-
-/**
- * Wires up the register form (#full-name, #email, #password, #register-btn) if present.
- */
-function initRegisterForm() {
-    const registerButton = document.getElementById('register-btn');
-    if (!registerButton) {
-        return;
-    }
-
-    registerButton.addEventListener('click', async (event) => {
-        event.preventDefault();
-
-        const fullNameInput = document.getElementById('full-name');
-        const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('password');
-
-        const fullNameValue = fullNameInput ? fullNameInput.value.trim() : '';
-        const emailValue = emailInput ? emailInput.value.trim() : '';
-        const passwordValue = passwordInput ? passwordInput.value : '';
-
-        if (!fullNameValue || !emailValue || !passwordValue) {
-            showToast('Please fill in all fields.', 'error');
-            return;
-        }
-
-        registerButton.disabled = true;
-
-        try {
-            await fetchJson('/register', {
-                method: 'POST',
-                body: { full_name: fullNameValue, email: emailValue, password: passwordValue }
-            });
-            window.location.href = '/login';
-        } catch (error) {
-            showToast(error.message || 'Registration failed. Please try again.', 'error');
-        } finally {
-            registerButton.disabled = false;
+        if (password && confirmPassword && password !== confirmPassword) {
+            event.preventDefault(); // Stop form submission ONLY if passwords don't match
+            showToast('Passwords do not match.', 'error');
         }
     });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    initLoginForm();
-    initRegisterForm();
+    initRegisterValidation();
 });
