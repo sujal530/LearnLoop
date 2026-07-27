@@ -5,7 +5,7 @@ from flask import Blueprint, flash, redirect, render_template, session, url_for
 from config import Config
 from utils.decorators import login_required
 
-dashboard_bp = Blueprint("dashboard", __name__)
+auth_bp = Blueprint("auth", __name__)
 
 
 def get_db():
@@ -14,7 +14,7 @@ def get_db():
     return conn
 
 
-@dashboard_bp.route("/dashboard")
+@auth_bp.route("/auth")
 @login_required
 def dashboard():
     user_id = session["user_id"]
