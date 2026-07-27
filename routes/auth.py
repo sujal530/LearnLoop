@@ -1,9 +1,18 @@
 import sqlite3
-
-from flask import Blueprint, flash, redirect, render_template, session, url_for
+from flask import (
+    Blueprint,
+    flash,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for
+)
+from werkzeug.security import generate_password_hash, check_password_hash
 
 from config import Config
 from utils.decorators import login_required
+
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -14,90 +23,268 @@ def get_db():
     return conn
 
 
-@auth_bp.route("/auth")
+# -------------------------
+# LOGIN
+# -------------------------
+@auth_bp.route("/login", methods=["GET", "POST"])
+def login():
+
+    if request.method == "POST":
+
+        email = request.form.get("email")
+        password = request.form.get("password")
+
+        conn = get_db()
+
+        user = conn.execute(
+            "SELECT * FROM users WHERE email = ?",
+            (email,)
+        ).fetchone()
+
+        conn.close()
+
+        if user and check_password_hash(user["password"], password):
+
+            session["user_id"] = user["id"]
+
+            flash("Login successful!", "success")
+
+            return redirect(
+                url_for("auth.dashboard")
+            )
+
+        else:
+            flash(
+                "Invalid email or password",
+                "danger"
+            )
+
+
+    return render_template("login.html")
+
+
+
+# -------------------------
+# REGISTER
+# -------------------------
+@auth_bp.route("/register", methods=["GET", "POST"])
+def register():
+
+    if request.method == "POST":
+
+        name = request.form.get("name")
+        email = request.form.get("email")
+        password = request.form.get("password")
+
+
+        hashed_password = generate_password_hash(password)
+
+
+        conn = get_db()
+
+        try:
+
+            conn.execute(
+                """
+                INSERT INTO users
+                (name, email, password)
+                VALUES (?, ?, ?)
+                """,
+                (
+                    name,
+                    email,
+                    hashed_password
+                )
+            )
+
+            conn.commit()
+
+            flash(
+                "Account created successfully!",
+                "success"
+            )
+
+            return redirect(
+                url_for("auth.login")
+            )
+
+
+        except sqlite3.IntegrityError:
+
+            flash(
+                "Email already exists",
+                "danger"
+            )
+
+
+        finally:
+            conn.close()
+
+
+
+    return render_template("register.html")
+
+
+
+# -------------------------
+# DASHBOARD
+# -------------------------
+@auth_bp.route("/dashboard")
 @login_required
 def dashboard():
+
     user_id = session["user_id"]
+
     conn = None
 
     try:
+
         conn = get_db()
 
-        # Fetch logged-in user
+
         user = conn.execute(
-            "SELECT * FROM users WHERE id = ?", (user_id,)
+            "SELECT * FROM users WHERE id = ?",
+            (user_id,)
         ).fetchone()
 
-        if not user:
-            session.clear()
-            flash("Session expired. Please log in again.", "warning")
-            return redirect(url_for("auth.login"))
 
-        # Fetch most recent goal
+        if not user:
+
+            session.clear()
+
+            flash(
+                "Session expired. Please login again.",
+                "warning"
+            )
+
+            return redirect(
+                url_for("auth.login")
+            )
+
+
+
         goal = conn.execute(
             """
-            SELECT * FROM goals
+            SELECT *
+            FROM goals
             WHERE user_id = ?
             ORDER BY created_at DESC
             LIMIT 1
             """,
-            (user_id,),
+            (user_id,)
         ).fetchone()
 
-        # Fetch task counts
+
+
         completed_tasks = conn.execute(
-            "SELECT COUNT(*) FROM tasks WHERE user_id = ? AND completed = 1",
-            (user_id,),
+            """
+            SELECT COUNT(*)
+            FROM tasks
+            WHERE user_id = ?
+            AND completed = 1
+            """,
+            (user_id,)
         ).fetchone()[0]
+
+
 
         total_tasks = conn.execute(
-            "SELECT COUNT(*) FROM tasks WHERE user_id = ?",
-            (user_id,),
+            """
+            SELECT COUNT(*)
+            FROM tasks
+            WHERE user_id = ?
+            """,
+            (user_id,)
         ).fetchone()[0]
 
-        # Fetch additional summary counts
+
+
         roadmap_count = conn.execute(
-            "SELECT COUNT(*) FROM roadmaps WHERE user_id = ?",
-            (user_id,),
+            """
+            SELECT COUNT(*)
+            FROM roadmaps
+            WHERE user_id = ?
+            """,
+            (user_id,)
         ).fetchone()[0]
+
+
 
         quiz_count = conn.execute(
-            "SELECT COUNT(*) FROM quiz_history WHERE user_id = ?",
-            (user_id,),
+            """
+            SELECT COUNT(*)
+            FROM quiz_history
+            WHERE user_id = ?
+            """,
+            (user_id,)
         ).fetchone()[0]
 
-        # Fetch existing progress row
+
+
         progress = conn.execute(
-            "SELECT * FROM progress WHERE user_id = ?", (user_id,)
+            """
+            SELECT *
+            FROM progress
+            WHERE user_id = ?
+            """,
+            (user_id,)
         ).fetchone()
 
+
+
         if not progress:
-            # Create a fresh progress row for this user
+
             conn.execute(
                 """
-                INSERT INTO progress (user_id, completed_tasks, total_tasks, study_hours, streak)
+                INSERT INTO progress
+                (
+                    user_id,
+                    completed_tasks,
+                    total_tasks,
+                    study_hours,
+                    streak
+                )
                 VALUES (?, ?, ?, ?, ?)
                 """,
-                (user_id, completed_tasks, total_tasks, 0, 0),
+                (
+                    user_id,
+                    completed_tasks,
+                    total_tasks,
+                    0,
+                    0
+                )
             )
-            conn.commit()
+
         else:
-            # Synchronize live task counts into the progress table
+
             conn.execute(
                 """
                 UPDATE progress
-                SET completed_tasks = ?,
-                    total_tasks     = ?
-                WHERE user_id = ?
+                SET completed_tasks=?,
+                    total_tasks=?
+                WHERE user_id=?
                 """,
-                (completed_tasks, total_tasks, user_id),
+                (
+                    completed_tasks,
+                    total_tasks,
+                    user_id
+                )
             )
-            conn.commit()
 
-        # Reload progress row so template always receives the latest values
+
+        conn.commit()
+
+
         progress = conn.execute(
-            "SELECT * FROM progress WHERE user_id = ?", (user_id,)
+            """
+            SELECT *
+            FROM progress
+            WHERE user_id=?
+            """,
+            (user_id,)
         ).fetchone()
+
+
 
         return render_template(
             "dashboard.html",
@@ -107,13 +294,44 @@ def dashboard():
             completed_tasks=completed_tasks,
             total_tasks=total_tasks,
             roadmap_count=roadmap_count,
-            quiz_count=quiz_count,
+            quiz_count=quiz_count
         )
 
+
+
     except sqlite3.Error:
-        flash("A database error occurred. Please try again.", "danger")
-        return redirect(url_for("auth.login"))
+
+        flash(
+            "Database error occurred",
+            "danger"
+        )
+
+        return redirect(
+            url_for("auth.login")
+        )
+
+
 
     finally:
+
         if conn:
             conn.close()
+
+
+
+# -------------------------
+# LOGOUT
+# -------------------------
+@auth_bp.route("/logout")
+def logout():
+
+    session.clear()
+
+    flash(
+        "Logged out successfully",
+        "success"
+    )
+
+    return redirect(
+        url_for("auth.login")
+    )
