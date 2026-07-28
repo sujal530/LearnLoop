@@ -1,15 +1,11 @@
 /* ==========================================================================
    LearnLoop — Roadmap & Tasks
-   #roadmap-container : page wrapper
-   .roadmap-node       : single milestone on the timeline
-   .task-item          : task row toggled by handleTaskStatusToggle (roadmap.js)
-   Depends on tokens defined in style.css — load style.css first.
    ========================================================================== */
 
 #roadmap-container {
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 28px;
 }
 
 .roadmap-header {
@@ -17,17 +13,21 @@
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 16px;
 }
 
-.roadmap-header .subtitle { color: var(--slate-500); font-size: 0.9rem; }
+.roadmap-header .subtitle { 
+  color: #64748b; 
+  font-size: 0.95rem; 
+  margin-top: 4px;
+}
 
-/* ---------- Timeline: the "loop" connecting each milestone ---------- */
+/* ---------- Timeline layout ---------- */
 .roadmap-timeline {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
   padding-left: 36px;
 }
 
@@ -35,109 +35,137 @@
   content: "";
   position: absolute;
   left: 11px;
-  top: 8px;
-  bottom: 8px;
-  border-left: 2px dashed var(--slate-100);
+  top: 15px;
+  bottom: 15px;
+  border-left: 2px dashed #cbd5e1;
 }
 
+/* Milestone Cards */
 .roadmap-node {
   position: relative;
-  background: var(--paper-0);
-  border: 1px solid var(--slate-100);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-card);
-  padding: 18px 20px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  padding: 20px;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+.roadmap-node:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Timeline dot indicators */
 .roadmap-node::before {
   content: "";
   position: absolute;
   left: -36px;
-  top: 22px;
+  top: 24px;
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: var(--paper-0);
-  border: 3px solid var(--slate-300);
+  background: #ffffff;
+  border: 3px solid #94a3b8;
+  z-index: 2;
 }
 
 .roadmap-node--completed::before {
-  border-color: var(--loop-teal-500);
-  background: var(--loop-teal-500);
+  border-color: #0d9488;
+  background: #0d9488;
 }
 
-.roadmap-node--active::before { border-color: var(--spark-amber-500); }
+.roadmap-node--active::before { 
+  border-color: #f59e0b; 
+}
+
+.roadmap-node-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
 
 .roadmap-node-title {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-family: var(--font-display);
+  font-size: 1.1rem;
   font-weight: 600;
-  color: var(--ink-900);
+  color: #0f172a;
+  margin: 0;
+}
+
+.node-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: #f1f5f9;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #0f172a;
 }
 
 .roadmap-node-description {
-  margin-top: 6px;
+  margin-top: 8px;
   font-size: 0.9rem;
-  color: var(--slate-500);
+  color: #64748b;
+  line-height: 1.5;
 }
 
 .roadmap-node-meta {
-  margin-top: 12px;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-/* ---------- Task list attached to each node ---------- */
-.task-list {
-  margin-top: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.task-item {
+  margin-top: 16px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
-  background: var(--paper-50);
-  font-size: 0.9rem;
-  transition: background var(--transition-base);
+  gap: 12px;
 }
 
-.task-item:hover { background: var(--loop-teal-100); }
-
-.task-checkbox {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  border: 2px solid var(--slate-300);
-  flex-shrink: 0;
-  display: grid;
-  place-items: center;
-  transition: background var(--transition-base), border-color var(--transition-base);
+/* Progress bar inside cards */
+.progress-bar {
+  flex: 1;
+  height: 8px;
+  background: #f1f5f9;
+  border-radius: 4px;
+  overflow: hidden;
 }
 
-.task-item--completed .task-checkbox {
-  background: var(--loop-teal-500);
-  border-color: var(--loop-teal-500);
+.progress-bar-fill {
+  height: 100%;
+  background: #0d9488;
+  border-radius: 4px;
 }
 
-.task-item--completed .task-title {
-  color: var(--slate-300);
-  text-decoration: line-through;
+.progress-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #64748b;
 }
 
-.task-title { flex: 1; color: var(--ink-900); }
-
-.task-deadline {
-  font-family: var(--font-mono);
+/* Difficulty Pills */
+.difficulty-pill {
   font-size: 0.75rem;
-  color: var(--slate-500);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-weight: 600;
+  text-transform: capitalize;
 }
 
-.task-deadline--overdue { color: var(--coral-500); font-weight: 600; }
+.difficulty-beginner { background: #dcfce7; color: #166534; }
+.difficulty-intermediate { background: #fef3c7; color: #92400e; }
+.difficulty-advanced { background: #fee2e2; color: #991b1b; }
+
+/* Filter dropdown */
+.select-input {
+  padding: 8px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 0.9rem;
+  outline: none;
+}

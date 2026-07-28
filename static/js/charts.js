@@ -3,24 +3,6 @@
  * -----------------------------------------------------------------------
  * Renders the analytics charts shown inside #dashboard-container.
  * Uses Chart.js (loaded via CDN <script> tag in templates/dashboard.html).
- *
- * SCOPE OF THIS FILE
- * This file only renders charts from data it is given. It does not fetch
- * data itself, so it does not need to know which route or table the data
- * came from. dashboard.js (owned by another dev) is responsible for
- * loading data from the backend and calling initDashboardCharts() below.
- *
- * EXPECTED CANVAS IDS (add these inside #dashboard-container in
- * templates/dashboard.html — no existing id in the naming list covers
- * charts, so these three are new and kept consistent/kebab-case):
- *   - completion-chart      (topic completion, from Progress table)
- *   - task-status-chart     (task status breakdown, from Tasks table)
- *   - weekly-activity-chart (learning velocity / daily consistency)
- *
- * EXPECTED DATA SHAPES (field names match the existing DB columns):
- *   progressData        -> [{ topic, completion }, ...]
- *   taskData             -> [{ title, status, deadline }, ...]
- *   weeklyActivityData   -> [{ label, value }, ...]  e.g. [{label:"Mon",value:3}]
  */
 
 const chartColorPalette = {
@@ -38,18 +20,16 @@ let weeklyActivityChartInstance = null;
 
 /**
  * Renders a doughnut chart of completion percentage per topic.
- * @param {string} canvasId - id of the <canvas> element
+ * @param {string} canvasId
  * @param {Array<{topic: string, completion: number}>} progressData
  */
 function renderCompletionChart(canvasId, progressData) {
     const chartCanvas = document.getElementById(canvasId);
-    if (!chartCanvas || typeof Chart === 'undefined') {
-        return;
-    }
+    if (!chartCanvas || typeof Chart === 'undefined') return;
 
     const hasData = Array.isArray(progressData) && progressData.length > 0;
-    const topicLabels = hasData ? progressData.map((entry) => entry.topic) : ['No progress yet'];
-    const completionValues = hasData ? progressData.map((entry) => entry.completion) : [100];
+    const topicLabels = hasData ? progressData.map((entry) => entry.topic || 'Untitled') : ['No Progress'];
+    const completionValues = hasData ? progressData.map((entry) => entry.completion || 0) : [0];
 
     if (completionChartInstance) {
         completionChartInstance.destroy();
@@ -86,21 +66,19 @@ function renderCompletionChart(canvasId, progressData) {
 }
 
 /**
- * Renders a bar chart showing how many tasks are completed, pending, or overdue.
- * @param {string} canvasId - id of the <canvas> element
+ * Renders a bar chart showing task breakdown.
+ * @param {string} canvasId
  * @param {Array<{status: string}>} taskData
  */
 function renderTaskStatusChart(canvasId, taskData) {
     const chartCanvas = document.getElementById(canvasId);
-    if (!chartCanvas || typeof Chart === 'undefined') {
-        return;
-    }
+    if (!chartCanvas || typeof Chart === 'undefined') return;
 
     const statusCounts = { completed: 0, pending: 0, overdue: 0 };
 
     if (Array.isArray(taskData)) {
         taskData.forEach((task) => {
-            const taskStatus = (task.status || '').toLowerCase();
+            const taskStatus = (task.status || '').toLowerCase().trim();
             if (Object.prototype.hasOwnProperty.call(statusCounts, taskStatus)) {
                 statusCounts[taskStatus] += 1;
             }
@@ -144,19 +122,17 @@ function renderTaskStatusChart(canvasId, taskData) {
 }
 
 /**
- * Renders a line chart of learning velocity / daily consistency.
- * @param {string} canvasId - id of the <canvas> element
+ * Renders a line chart of daily/weekly activity.
+ * @param {string} canvasId
  * @param {Array<{label: string, value: number}>} weeklyActivityData
  */
 function renderWeeklyActivityChart(canvasId, weeklyActivityData) {
     const chartCanvas = document.getElementById(canvasId);
-    if (!chartCanvas || typeof Chart === 'undefined') {
-        return;
-    }
+    if (!chartCanvas || typeof Chart === 'undefined') return;
 
     const hasData = Array.isArray(weeklyActivityData) && weeklyActivityData.length > 0;
-    const activityLabels = hasData ? weeklyActivityData.map((entry) => entry.label) : [];
-    const activityValues = hasData ? weeklyActivityData.map((entry) => entry.value) : [];
+    const activityLabels = hasData ? weeklyActivityData.map((entry) => entry.label) : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const activityValues = hasData ? weeklyActivityData.map((entry) => entry.value) : [0, 0, 0, 0, 0, 0, 0];
 
     if (weeklyActivityChartInstance) {
         weeklyActivityChartInstance.destroy();
@@ -194,21 +170,11 @@ function renderWeeklyActivityChart(canvasId, weeklyActivityData) {
 }
 
 /**
- * Convenience entry point: renders every dashboard chart whose canvas is
- * present on the page. Call this from dashboard.js once data has been
- * fetched, e.g.:
- *
- *   initDashboardCharts({
- *       progress: progressData,
- *       tasks: taskData,
- *       weeklyActivity: weeklyActivityData
- *   });
- *
- * @param {{progress?: Array, tasks?: Array, weeklyActivity?: Array}} dashboardData
+ * Global Initializer
  */
 function initDashboardCharts(dashboardData = {}) {
     if (typeof Chart === 'undefined') {
-        console.error('Chart.js is not loaded. Add the Chart.js <script> tag before charts.js.');
+        console.error('Chart.js is not loaded. Ensure Chart.js script tag precedes charts.js');
         return;
     }
 

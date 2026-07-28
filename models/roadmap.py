@@ -1,81 +1,92 @@
 """
 models/roadmap.py
 
-Roadmap model for LearnLoop AI
+Database operations for Roadmaps and Milestones.
 """
 
-from dataclasses import dataclass, field
-from datetime import datetime
+import sqlite3
+from config import Config
 
 
-@dataclass
 class Roadmap:
-    user_id: int
-    goal: str
-    skill_level: str
-    study_hours_per_day: int
-    duration_weeks: int
-    created_at: str = field(
-        default_factory=lambda: datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    )
+    def __init__(self, id, user_id, title, duration_weeks, created_at=None):
+        self.id = id
+        self.user_id = user_id
+        self.title = title
+        self.duration_weeks = duration_weeks
+        self.created_at = created_at
 
-    weekly_plan: list = field(default_factory=list)
+    @staticmethod
+    def get_db():
+        conn = sqlite3.connect(Config.DATABASE)
+        conn.row_factory = sqlite3.Row
+        return conn
 
-    # ---------------------------------
-    # Add Weekly Plan
-    # ---------------------------------
-    def add_week(self, title, topics):
-        """
-        Add a weekly learning plan.
-        """
+    @classmethod
+    def get_latest_by_user(cls, user_id):
+        """Fetch the user's most recently created roadmap."""
+        conn = cls.get_db()
+        row = conn.execute(
+            "SELECT * FROM roadmaps WHERE user_id = ? ORDER BY id DESC LIMIT 1",
+            (user_id,)
+        ).fetchone()
+        conn.close()
 
-        self.weekly_plan.append({
-            "week": len(self.weekly_plan) + 1,
-            "title": title,
-            "topics": topics
-        })
-
-    # ---------------------------------
-    # Total Weeks
-    # ---------------------------------
-    def total_weeks(self):
-        return len(self.weekly_plan)
-
-    # ---------------------------------
-    # Get Specific Week
-    # ---------------------------------
-    def get_week(self, week_number):
-
-        if 1 <= week_number <= len(self.weekly_plan):
-            return self.weekly_plan[week_number - 1]
-
+        if row:
+            return cls(
+                id=row["id"],
+                user_id=row["user_id"],
+                title=row["title"],
+                duration_weeks=row["duration_weeks"],
+                created_at=row["created_at"] if "created_at" in row.keys() else None
+            )
         return None
 
-    # ---------------------------------
-    # Completion Percentage
-    # ---------------------------------
-    def completion_percentage(self, completed_weeks):
+    @classmethod
+    def get_milestones(cls, roadmap_id):
+        """Fetch all milestones attached to a roadmap."""
+        conn = cls.get_db()
+        rows = conn.execute(
+            "SELECT * FROM milestones WHERE roadmap_id = ? ORDER BY id ASC",
+            (roadmap_id,)
+        ).fetchall()
+        conn.close()
+        return [dict(r) for r in rows]
 
-        if self.duration_weeks == 0:
-            return 0
-
-        return round(
-            (completed_weeks / self.duration_weeks) * 100,
-            2
-        )
-
-    # ---------------------------------
-    # Convert to Dictionary
-    # ---------------------------------
-    def to_dict(self):
-
-        return {
-            "user_id": self.user_id,
-            "goal": self.goal,
-            "skill_level": self.skill_level,
-            "study_hours_per_day": self.study_hours_per_day,
-            "duration_weeks": self.duration_weeks,
-            "created_at": self.created_at,
-            "weekly_plan": self.weekly_plan
-        }
+    @classmethod
+    def create(cls, user_id, title, duration_weeks, milestones=None):
+        """Create a new roadmap and save associated milestones."""
+        conn = cls.get_db()
+        cursor = conn.cursor()
         
+        cursor.execute(
+            "INSERT INTO roadmaps (user_id, title, duration_weeks) VALUES (?, ?, ?)",
+            (user_id, title, duration_weeks)
+        )
+        roadmap_id = cursor.lastrowid
+
+        if milestones:
+            for idx, milestone_title in enumerate(milestones, start=1):
+                cursor.execute(
+                    "INSERT INTO milestones (roadmap_id, title, week_number, completed) VALUES (?, ?, ?, 0)",
+                    (roadmap_id, milestone_title, idx)
+                )
+
+        conn.commit()
+        conn.close()
+        return cls.get_latest_by_user(user_id)
+
+    @classmethod
+    def toggle_milestone(cls, milestone_id):
+        """Toggle completion status of a milestone."""
+        conn = cls.get_db()
+        row = conn.execute("SELECT completed FROM milestones WHERE id = ?", (milestone_id,)).fetchone()
+        if not row:
+            conn.close()
+            return None
+
+        new_status = 0 if row["completed"] else 1
+        conn.execute("UPDATE milestones SET completed = ? WHERE id = ?", (new_status, milestone_id))
+        conn.commit()
+        conn.close()
+        return new_status

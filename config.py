@@ -9,7 +9,7 @@ class Config:
     # -------------------------------
     # Flask Configuration
     # -------------------------------
-    SECRET_KEY = os.getenv("SECRET_KEY", "learnloopai_secret_key")
+    SECRET_KEY = os.getenv("SECRET_KEY", "learnloopai_secret_key_default_change_me")
 
     # -------------------------------
     # Project Paths
@@ -58,16 +58,15 @@ class Config:
     ]
 
     # -------------------------------
-    # Uploads
+    # Uploads & File Handling
     # -------------------------------
     UPLOAD_FOLDER = os.path.join(BASE_DIR, "static", "uploads")
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # Limit file uploads to 16 MB
 
-    # -------------------------------
-    # Session
-    # -------------------------------
-    SESSION_TYPE = "filesystem"
+    # Ensure uploads folder exists
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
     # -------------------------------
     # Debug
     # -------------------------------
-    DEBUG = True
+    DEBUG = os.getenv("FLASK_DEBUG", "True").lower() in ("true", "1", "t")

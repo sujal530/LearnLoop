@@ -2,13 +2,17 @@
 
 {% block title %}Roadmap{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/roadmap.css') }}">
+{% endblock %}
+
 {% block content %}
 <div class="roadmap-container" id="roadmap-container">
 
-  <div class="page-head">
+  <div class="roadmap-header">
     <div>
-      <h1 class="page-title">Your Roadmap</h1>
-      <p class="page-subtitle">A personalized path built around your goals.</p>
+      <h1 class="page-title">Your Learning Roadmap</h1>
+      <p class="subtitle">A personalized path built around your goals.</p>
     </div>
     <div class="page-head-actions">
       <select class="select-input" id="roadmap-difficulty-filter">
@@ -20,26 +24,31 @@
     </div>
   </div>
 
-  <section class="roadmap-track" id="roadmap-track">
+  <section class="roadmap-timeline" id="roadmap-track">
     {% for item in roadmap_items|default([]) %}
-    <a href="{{ url_for('topic', topic_id=item.id) }}" class="roadmap-node {% if item.completion == 100 %}roadmap-node-complete{% elif item.completion > 0 %}roadmap-node-active{% endif %}">
-      <div class="roadmap-node-marker">
-        {% if item.completion == 100 %}✓{% else %}{{ loop.index }}{% endif %}
-      </div>
+    <a href="{{ url_for('topic', topic_id=item.id) }}" class="roadmap-node {% if item.completion == 100 %}roadmap-node--completed{% elif item.completion > 0 %}roadmap-node--active{% endif %}">
       <div class="roadmap-node-body">
         <div class="roadmap-node-head">
-          <h3 class="roadmap-node-title">{{ item.title }}</h3>
+          <h3 class="roadmap-node-title">
+            <span class="node-index">{% if item.completion == 100 %}✓{% else %}{{ loop.index }}{% endif %}</span>
+            {{ item.title }}
+          </h3>
           <span class="difficulty-pill difficulty-{{ item.difficulty }}">{{ item.difficulty }}</span>
         </div>
-        <p class="roadmap-node-desc">{{ item.description }}</p>
-        <div class="progress-bar">
-          <div class="progress-bar-fill" style="width: {{ item.completion }}%;"></div>
+        <p class="roadmap-node-description">{{ item.description }}</p>
+        
+        <div class="roadmap-node-meta">
+          <div class="progress-bar">
+            <div class="progress-bar-fill" style="width: {{ item.completion }}%;"></div>
+          </div>
+          <span class="progress-label">{{ item.completion }}% complete</span>
         </div>
-        <span class="progress-bar-label">{{ item.completion }}% complete</span>
       </div>
     </a>
     {% else %}
-    <p class="empty-state">No roadmap topics yet. Check back soon.</p>
+    <div class="roadmap-node">
+      <p class="roadmap-node-description">Your roadmap has not been generated yet. Check back soon!</p>
+    </div>
     {% endfor %}
   </section>
 

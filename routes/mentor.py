@@ -1,78 +1,132 @@
-from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for
-import google.generativeai as genai
-from config import Config
+"""
+routes/mentor.py
 
+Blueprint for AI Mentor route handlers and chat endpoints.
+"""
+
+import sqlite3
+from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for
+from config import Config
+from ai.ai_service import ai_service
 
 mentor_bp = Blueprint("mentor", __name__)
 
-# -----------------------------
-# Configure Gemini API
-# -----------------------------
-genai.configure(api_key=Config.GEMINI_API_KEY)
 
-model = genai.GenerativeModel(Config.GEMINI_MODEL)
+def get_db_connection():
+    conn = sqlite3.connect(Config.DATABASE)
+    conn.row_factory = sqlite3.Row
+    return conn
 
 
 # -----------------------------
 # Mentor Page
 # -----------------------------
-@mentor_bp.route("/mentor")
+@mentor_bp.route("/mentor", methods=["GET", "POST"])
 def mentor():
-
     if "user_id" not in session:
         return redirect(url_for("auth.login"))
 
-    return render_template("mentor.html")
+    user_id = session["user_id"]
+
+    # Handle standard HTML form submission fallback
+    if request.method == "POST":
+        user_msg = request.form.get("message", "").strip()
+        if user_msg:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+
+            # Save user message
+            cursor.execute(
+                "INSERT INTO mentor_chats (user_id, sender, message) VALUES (?, ?, ?)",
+                (user_id, "user", user_msg)
+            )
+
+            # Get past chat history for context
+            history_rows = cursor.execute(
+                "SELECT sender, message AS text FROM mentor_chats WHERE user_id = ? ORDER BY id DESC LIMIT 6",
+                (user_id,)
+            ).fetchall()
+            history = [dict(r) for r in reversed(history_rows)]
+
+            # Generate AI response
+            ai_reply = ai_service.mentor_chat(user_msg, history)
+
+            # Save AI response
+            cursor.execute(
+                "INSERT INTO mentor_chats (user_id, sender, message) VALUES (?, ?, ?)",
+                (user_id, "mentor", ai_reply)
+            )
+            conn.commit()
+            conn.close()
+
+        return redirect(url_for("mentor.mentor"))
+
+    # Fetch user chat history for template rendering
+    conn = get_db_connection()
+    chat_rows = conn.execute(
+        """
+        SELECT sender, message AS text, 
+               strftime('%H:%M', created_at) AS time_ago 
+        FROM mentor_chats 
+        WHERE user_id = ? 
+        ORDER BY id ASC
+        """,
+        (user_id,)
+    ).fetchall()
+    conn.close()
+
+    chat_history = [dict(row) for row in chat_rows]
+
+    return render_template("mentor.html", chat_history=chat_history)
 
 
 # -----------------------------
-# Chat API
+# AJAX Chat API
 # -----------------------------
 @mentor_bp.route("/mentor/chat", methods=["POST"])
 def mentor_chat():
-
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
-    data = request.get_json()
-
+    user_id = session["user_id"]
+    data = request.get_json() or {}
     prompt = data.get("message", "").strip()
 
     if not prompt:
-        return jsonify({
-            "response": "Please enter a question."
-        })
+        return jsonify({"response": "Please enter a question."})
 
     try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
 
-        system_prompt = f"""
-You are LearnLoop AI.
+        # Save user message
+        cursor.execute(
+            "INSERT INTO mentor_chats (user_id, sender, message) VALUES (?, ?, ?)",
+            (user_id, "user", prompt)
+        )
 
-You are a professional AI mentor.
+        # Get recent context
+        history_rows = cursor.execute(
+            "SELECT sender, message AS text FROM mentor_chats WHERE user_id = ? ORDER BY id DESC LIMIT 6",
+            (user_id,)
+        ).fetchall()
+        history = [dict(r) for r in reversed(history_rows)]
 
-Your job is to:
-- Explain concepts in simple language.
-- Answer student doubts.
-- Give examples.
-- Suggest learning resources.
-- Encourage the learner.
-- Keep answers concise and beginner-friendly.
+        # Query Gemini via AIService
+        ai_reply = ai_service.mentor_chat(prompt, history)
 
-Student Question:
-{prompt}
-"""
+        # Save AI reply
+        cursor.execute(
+            "INSERT INTO mentor_chats (user_id, sender, message) VALUES (?, ?, ?)",
+            (user_id, "mentor", ai_reply)
+        )
+        conn.commit()
+        conn.close()
 
-        response = model.generate_content(system_prompt)
-
-        return jsonify({
-            "response": response.text
-        })
+        return jsonify({"response": ai_reply})
 
     except Exception as e:
-
-        return jsonify({
-            "response": f"Error: {str(e)}"
-        }), 500
+        return jsonify({"response": f"Error: {str(e)}"}), 500
 
 
 # -----------------------------
@@ -80,40 +134,18 @@ Student Question:
 # -----------------------------
 @mentor_bp.route("/mentor/quiz", methods=["POST"])
 def generate_quiz():
-
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
-    data = request.get_json()
-
-    topic = data.get("topic", "")
-
-    prompt = f"""
-Generate 5 multiple-choice questions on {topic}.
-
-Format:
-
-Question:
-A.
-B.
-C.
-D.
-Answer:
-"""
+    data = request.get_json() or {}
+    topic = data.get("topic", "General Knowledge")
+    difficulty = data.get("difficulty", "Beginner")
 
     try:
-
-        response = model.generate_content(prompt)
-
-        return jsonify({
-            "quiz": response.text
-        })
-
+        quiz_data = ai_service.generate_quiz(topic, difficulty)
+        return jsonify({"quiz": quiz_data})
     except Exception as e:
-
-        return jsonify({
-            "error": str(e)
-        }), 500
+        return jsonify({"error": str(e)}), 500
 
 
 # -----------------------------
@@ -121,45 +153,17 @@ Answer:
 # -----------------------------
 @mentor_bp.route("/mentor/roadmap", methods=["POST"])
 def roadmap():
-
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
-    data = request.get_json()
-
-    goal = data.get("goal")
-    level = data.get("level")
-    study_time = data.get("study_time")
-
-    prompt = f"""
-Create a weekly learning roadmap.
-
-Goal:
-{goal}
-
-Skill Level:
-{level}
-
-Daily Study Time:
-{study_time}
-
-Return:
-Week 1
-Week 2
-Week 3
-...
-"""
+    data = request.get_json() or {}
+    goal = data.get("goal", "Python Programming")
+    level = data.get("level", "Beginner")
+    study_time = data.get("study_time", 2)
+    deadline = data.get("deadline", "4 Weeks")
 
     try:
-
-        response = model.generate_content(prompt)
-
-        return jsonify({
-            "roadmap": response.text
-        })
-
+        roadmap_content = ai_service.generate_roadmap(goal, level, study_time, deadline)
+        return jsonify({"roadmap": roadmap_content})
     except Exception as e:
-
-        return jsonify({
-            "error": str(e)
-        }), 500
+        return jsonify({"error": str(e)}), 500

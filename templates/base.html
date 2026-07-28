@@ -3,18 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}LearnLoop{% endblock %} | LearnLoop AI</title>
+  <title>{% block title %}LearnLoop AI{% endblock %}</title>
 
+  <!-- Make sure this line exists and points to style.css -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  
   {% block extra_css %}{% endblock %}
 </head>
 <body class="app-body">
 
   <div class="app-shell">
 
+    <!-- Sidebar Overlay & Sidebar -->
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
-
-    <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-brand">
         <span class="brand-icon">✦</span>
@@ -55,18 +56,15 @@
       </div>
     </aside>
 
-    <!-- Main -->
+    <!-- Main Viewport -->
     <div class="main-panel">
-
       <header class="topbar">
         <button class="icon-btn sidebar-toggle" id="sidebar-toggle" type="button" aria-label="Toggle sidebar">☰</button>
-
         <div class="topbar-search">
           <span class="search-icon">🔍</span>
           <input type="text" id="global-search" placeholder="Search anything...">
           <span class="search-kbd">⌘K</span>
         </div>
-
         <div class="topbar-actions">
           <button class="icon-btn" id="theme-toggle" type="button" aria-label="Toggle theme">◐</button>
           <button class="icon-btn" id="notifications-btn" type="button" aria-label="Notifications">
@@ -82,8 +80,8 @@
       <main class="page-content">
         {% block content %}{% endblock %}
       </main>
-
     </div>
+
   </div>
 
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>
