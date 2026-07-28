@@ -9,6 +9,7 @@
 {% block content %}
 <div class="dashboard-container" id="dashboard-container">
 
+  <!-- Header Section -->
   <div class="page-head">
     <div>
       <h1 class="page-title">Welcome back, {{ session.get('user_name', 'learner') }}</h1>
@@ -20,6 +21,7 @@
     </div>
   </div>
 
+  <!-- Top Stat Cards -->
   <section class="stat-grid">
     <article class="dashboard-card stat-card">
       <div class="stat-icon stat-icon-pink">↗</div>
@@ -57,6 +59,7 @@
     </article>
   </section>
 
+  <!-- Row 1 Charts: Weekly Progress & Learning DNA -->
   <section class="dashboard-grid">
     <article class="dashboard-card chart-card">
       <div class="card-head">
@@ -66,24 +69,35 @@
         </div>
         <span class="chip chip-active">This week</span>
       </div>
-      <div class="chart-body">
-        <canvas id="weekly-progress-chart"></canvas>
+      <div class="chart-body" style="position: relative; height: 260px;">
+        <canvas id="weekly-activity-chart"></canvas>
       </div>
     </article>
 
-    {% include "learning_dna.html" %}
+    <article class="dashboard-card chart-card">
+      <div class="card-head">
+        <div>
+          <h2 class="card-title">Learning DNA</h2>
+          <p class="card-subtitle">Topic completion breakdown</p>
+        </div>
+      </div>
+      <div class="chart-body" style="position: relative; height: 260px;">
+        <canvas id="completion-chart"></canvas>
+      </div>
+    </article>
   </section>
 
+  <!-- Row 2 Charts: Tasks Completed & Activity Heatmap -->
   <section class="dashboard-grid">
     <article class="dashboard-card chart-card">
       <div class="card-head">
         <div>
           <h2 class="card-title">Tasks Completed</h2>
-          <p class="card-subtitle">Weekly task volume</p>
+          <p class="card-subtitle">Weekly task volume by status</p>
         </div>
       </div>
-      <div class="chart-body">
-        <canvas id="tasks-completed-chart"></canvas>
+      <div class="chart-body" style="position: relative; height: 260px;">
+        <canvas id="task-status-chart"></canvas>
       </div>
     </article>
 
@@ -106,11 +120,17 @@
     </article>
   </section>
 
+  <!-- Row 3 Lists: Recent Activity, Upcoming Tasks, and Quick Notes -->
   <section class="dashboard-grid dashboard-grid-thirds">
     <article class="dashboard-card list-card">
       <h2 class="card-title">Recent Activity</h2>
       <ul class="activity-list" id="recent-activity-list">
-        {% for activity in recent_activities|default([]) %}
+        {% set activities = recent_activities|default([
+          {'icon': '✅', 'text': 'Completed Python Basics Quiz', 'time_ago': '2 hours ago'},
+          {'icon': '📌', 'text': 'Created Task: Flask Routing', 'time_ago': 'Yesterday'},
+          {'icon': '🔥', 'text': 'Reached 14-day study streak', 'time_ago': '2 days ago'}
+        ]) %}
+        {% for activity in activities %}
         <li class="activity-item">
           <span class="activity-icon">{{ activity.icon }}</span>
           <div>
@@ -125,10 +145,14 @@
     <article class="dashboard-card list-card">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
         <h2 class="card-title" style="margin: 0;">Upcoming Tasks</h2>
-        <span class="chip" id="upcoming-tasks-count">0</span>
+        {% set tasks = upcoming_tasks|default([
+          {'icon': '💻', 'title': 'Flask Blueprint Setup', 'type': 'Coding', 'due_label': 'Today'},
+          {'icon': '📚', 'title': 'Read SQLite Docs', 'type': 'Learning', 'due_label': 'Tomorrow'}
+        ]) %}
+        <span class="chip" id="upcoming-tasks-count">{{ tasks|length }}</span>
       </div>
       <ul class="upcoming-task-list" id="upcoming-tasks-list">
-        {% for task in upcoming_tasks|default([]) %}
+        {% for task in tasks %}
         <li class="upcoming-task-item">
           <span class="task-icon">{{ task.icon }}</span>
           <div class="task-meta">
@@ -155,7 +179,56 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- Chart.js Engine -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Project Chart Initialization Script -->
 <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // 1. Pass Jinja or Fallback Data into JavaScript
+    const dashboardData = {
+      progress: {{ progress_data | default([
+        {'topic': 'Python Core', 'completion': 85},
+        {'topic': 'Flask API', 'completion': 65},
+        {'topic': 'SQLite DB', 'completion': 50},
+        {'topic': 'Frontend', 'completion': 90}
+      ]) | tojson }},
+
+      tasks: {{ task_data | default([
+        {'status': 'completed'}, {'status': 'completed'}, {'status': 'completed'},
+        {'status': 'pending'}, {'status': 'pending'},
+        {'status': 'overdue'}
+      ]) | tojson }},
+
+      weeklyActivity: {{ weekly_activity_data | default([
+        {'label': 'Mon', 'value': 2},
+        {'label': 'Tue', 'value': 4},
+        {'label': 'Wed', 'value': 3},
+        {'label': 'Thu', 'value': 6},
+        {'label': 'Fri', 'value': 4},
+        {'label': 'Sat', 'value': 7},
+        {'label': 'Sun', 'value': 5}
+      ]) | tojson }}
+    };
+
+    // 2. Initialize Charts via charts.js
+    if (typeof initDashboardCharts === 'function') {
+      initDashboardCharts(dashboardData);
+    }
+
+    // 3. Render Heatmap Tiles (14 weeks x 7 days)
+    const heatmapGrid = document.getElementById('activity-heatmap');
+    if (heatmapGrid && heatmapGrid.children.length === 0) {
+      for (let i = 0; i < 98; i++) {
+        const cell = document.createElement('div');
+        const randomLevel = Math.floor(Math.random() * 4);
+        cell.className = `heatmap-cell level-${randomLevel}`;
+        heatmapGrid.appendChild(cell);
+      }
+    }
+  });
+</script>
+
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}

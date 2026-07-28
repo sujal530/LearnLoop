@@ -1,171 +1,169 @@
-/* ==========================================================================
-   LearnLoop — Roadmap & Tasks
-   ========================================================================== */
-
-#roadmap-container {
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
+/* Container & General Layout */
+.roadmap-container {
+  max-width: 850px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-.roadmap-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
+.page-head {
+  margin-bottom: 2.5rem;
 }
 
-.roadmap-header .subtitle { 
-  color: #64748b; 
-  font-size: 0.95rem; 
-  margin-top: 4px;
+.page-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #0f172a;
 }
 
-/* ---------- Timeline layout ---------- */
+.page-subtitle {
+  font-size: 0.95rem;
+  color: #64748b;
+}
+
+/* Main Train Line */
 .roadmap-timeline {
   position: relative;
+  padding-left: 2rem;
+  border-left: 4px solid #3b82f6; /* Main Track Line */
+  margin-left: 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  padding-left: 36px;
+  gap: 2rem;
 }
 
-.roadmap-timeline::before {
-  content: "";
-  position: absolute;
-  left: 11px;
-  top: 15px;
-  bottom: 15px;
-  border-left: 2px dashed #cbd5e1;
-}
-
-/* Milestone Cards */
-.roadmap-node {
+/* Timeline Node (Details Accordion) */
+.timeline-node {
   position: relative;
+  list-style: none;
+}
+
+/* Hide default HTML details triangle */
+.timeline-node summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Major Station Dot along the main track */
+.timeline-node::before {
+  content: '';
+  position: absolute;
+  left: -2.65rem;
+  top: 1.25rem;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: #2563eb;
+  border: 3px solid #ffffff;
+  box-shadow: 0 0 0 3px #93c5fd;
+  z-index: 3;
+}
+
+/* Major Station Card */
+.timeline-card {
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  cursor: pointer;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-  padding: 20px;
-  text-decoration: none;
-  color: inherit;
-  display: block;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.2s ease;
+  user-select: none;
 }
 
-.roadmap-node:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+.timeline-card:hover {
+  border-color: #93c5fd;
+  transform: translateX(4px);
 }
 
-/* Timeline dot indicators */
-.roadmap-node::before {
-  content: "";
-  position: absolute;
-  left: -36px;
-  top: 24px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: #ffffff;
-  border: 3px solid #94a3b8;
-  z-index: 2;
+.week-pill {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #2563eb;
+  background-color: #eff6ff;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  margin-bottom: 0.4rem;
 }
 
-.roadmap-node--completed::before {
-  border-color: #0d9488;
-  background: #0d9488;
-}
-
-.roadmap-node--active::before { 
-  border-color: #f59e0b; 
-}
-
-.roadmap-node-head {
+.card-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  align-items: center;
 }
 
-.roadmap-node-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #0f172a;
+.card-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1e293b;
   margin: 0;
 }
 
-.node-index {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  background: #f1f5f9;
-  border-radius: 50%;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #0f172a;
+.expand-icon {
+  font-size: 1.2rem;
+  color: #64748b;
+  transition: transform 0.2s ease;
 }
 
-.roadmap-node-description {
-  margin-top: 8px;
+.timeline-node[open] .expand-icon {
+  transform: rotate(180deg);
+}
+
+.card-description {
   font-size: 0.9rem;
   color: #64748b;
-  line-height: 1.5;
+  margin-top: 0.4rem;
 }
 
-.roadmap-node-meta {
-  margin-top: 16px;
+/* Intermediate Sub-Stops (Daily Breakdown) */
+.sub-timeline {
+  margin-top: 0.75rem;
+  margin-left: 1rem;
+  padding-left: 1.25rem;
+  border-left: 2px dashed #94a3b8; /* Intermediate Track */
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  gap: 0.75rem;
+  animation: fadeIn 0.25s ease-in-out;
 }
 
-/* Progress bar inside cards */
-.progress-bar {
-  flex: 1;
-  height: 8px;
-  background: #f1f5f9;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.progress-bar-fill {
-  height: 100%;
-  background: #0d9488;
-  border-radius: 4px;
-}
-
-.progress-label {
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: #64748b;
-}
-
-/* Difficulty Pills */
-.difficulty-pill {
-  font-size: 0.75rem;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-weight: 600;
-  text-transform: capitalize;
-}
-
-.difficulty-beginner { background: #dcfce7; color: #166534; }
-.difficulty-intermediate { background: #fef3c7; color: #92400e; }
-.difficulty-advanced { background: #fee2e2; color: #991b1b; }
-
-/* Filter dropdown */
-.select-input {
-  padding: 8px 14px;
-  border: 1px solid #cbd5e1;
+.sub-stop {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  background: #f8fafc;
+  padding: 0.75rem 1rem;
   border-radius: 8px;
-  background: #ffffff;
-  font-size: 0.9rem;
-  outline: none;
+  border: 1px solid #f1f5f9;
+}
+
+/* Small Sub-Stop Dot */
+.sub-dot {
+  position: absolute;
+  left: -1.65rem;
+  top: 1rem;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #64748b;
+  border: 2px solid #ffffff;
+}
+
+.day-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+}
+
+.sub-info p {
+  font-size: 0.85rem;
+  color: #334155;
+  margin: 0.2rem 0 0 0;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
