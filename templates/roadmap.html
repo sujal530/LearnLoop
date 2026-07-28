@@ -2,50 +2,67 @@
 
 {% block title %}Roadmap{% endblock %}
 
-{% block content %}
-<div class="roadmap-container" id="roadmap-container">
-
-  <div class="page-head">
-    <div>
-      <h1 class="page-title">Your Roadmap</h1>
-      <p class="page-subtitle">A personalized path built around your goals.</p>
-    </div>
-    <div class="page-head-actions">
-      <select class="select-input" id="roadmap-difficulty-filter">
-        <option value="all">All difficulties</option>
-        <option value="beginner">Beginner</option>
-        <option value="intermediate">Intermediate</option>
-        <option value="advanced">Advanced</option>
-      </select>
-    </div>
-  </div>
-
-  <section class="roadmap-track" id="roadmap-track">
-    {% for item in roadmap_items|default([]) %}
-    <a href="{{ url_for('topic', topic_id=item.id) }}" class="roadmap-node {% if item.completion == 100 %}roadmap-node-complete{% elif item.completion > 0 %}roadmap-node-active{% endif %}">
-      <div class="roadmap-node-marker">
-        {% if item.completion == 100 %}✓{% else %}{{ loop.index }}{% endif %}
-      </div>
-      <div class="roadmap-node-body">
-        <div class="roadmap-node-head">
-          <h3 class="roadmap-node-title">{{ item.title }}</h3>
-          <span class="difficulty-pill difficulty-{{ item.difficulty }}">{{ item.difficulty }}</span>
-        </div>
-        <p class="roadmap-node-desc">{{ item.description }}</p>
-        <div class="progress-bar">
-          <div class="progress-bar-fill" style="width: {{ item.completion }}%;"></div>
-        </div>
-        <span class="progress-bar-label">{{ item.completion }}% complete</span>
-      </div>
-    </a>
-    {% else %}
-    <p class="empty-state">No roadmap topics yet. Check back soon.</p>
-    {% endfor %}
-  </section>
-
-</div>
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/roadmap.css') }}">
 {% endblock %}
 
-{% block extra_js %}
-<script src="{{ url_for('static', filename='js/roadmap.js') }}"></script>
+{% block content %}
+<div class="roadmap-container">
+  <!-- Page Header -->
+  <div class="page-head">
+    <h1 class="page-title">Your Learning Roadmap</h1>
+    <p class="page-subtitle">Click on any week to view intermediate daily checkpoints.</p>
+  </div>
+
+  {% if roadmaps %}
+  <div class="roadmap-timeline">
+    {% for item in roadmaps %}
+    <details class="timeline-node" {% if loop.first %}open{% endif %}>
+      
+      <!-- Major Station / Week Header -->
+      <summary class="timeline-card">
+        <div class="week-pill">Major Stop • Week {{ item.week }}</div>
+        <div class="card-header">
+          <h3 class="card-title">{{ item.title }}</h3>
+          <span class="expand-icon">▾</span>
+        </div>
+        <p class="card-description">{{ item.content }}</p>
+      </summary>
+
+      <!-- Sub-Stations / Daily Checkpoints between major stops -->
+      <div class="sub-timeline">
+        <div class="sub-stop">
+          <span class="sub-dot"></span>
+          <div class="sub-info">
+            <span class="day-label">Day 1 - 2</span>
+            <p>Core setup, tools configuration, and syntax overview</p>
+          </div>
+        </div>
+
+        <div class="sub-stop">
+          <span class="sub-dot"></span>
+          <div class="sub-info">
+            <span class="day-label">Day 3 - 4</span>
+            <p>Hands-on practice exercises & code walkthroughs</p>
+          </div>
+        </div>
+
+        <div class="sub-stop">
+          <span class="sub-dot"></span>
+          <div class="sub-info">
+            <span class="day-label">Day 5 - 7</span>
+            <p>Mini-project assessment and practical integration</p>
+          </div>
+        </div>
+      </div>
+
+    </details>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <p>Your roadmap has not been generated yet.</p>
+  </div>
+  {% endif %}
+</div>
 {% endblock %}

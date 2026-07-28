@@ -57,18 +57,28 @@ function getEmbeddedData(elementId) {
  * Shows a small dismissible toast message.
  */
 function showToast(message, toastType = 'info') {
-    const toastContainer = document.getElementById('toast-container');
+    let toastContainer = document.getElementById('toast-container');
+    
+    // Auto-create container if missing from template
     if (!toastContainer) {
-        console[toastType === 'error' ? 'error' : 'log'](message);
-        return;
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        document.body.appendChild(toastContainer);
     }
 
     const toastElement = document.createElement('div');
     toastElement.className = `toast toast-${toastType}`;
     toastElement.textContent = message;
+    
+    // Allow clicking toast to dismiss early
+    toastElement.addEventListener('click', () => toastElement.remove());
     toastContainer.appendChild(toastElement);
 
-    setTimeout(() => toastElement.remove(), 4000);
+    // Fade out and remove after 3.5 seconds
+    setTimeout(() => {
+        toastElement.classList.add('fade-out');
+        setTimeout(() => toastElement.remove(), 300);
+    }, 3500);
 }
 
 /**
@@ -79,12 +89,18 @@ function initRegisterValidation() {
     if (!registerForm) return;
 
     registerForm.addEventListener('submit', (event) => {
-        const password = document.getElementById('password')?.value;
-        const confirmPassword = document.getElementById('confirm_password')?.value;
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirm_password');
+
+        const password = passwordInput ? passwordInput.value : '';
+        const confirmPassword = confirmPasswordInput ? confirmPasswordInput.value : '';
 
         if (password && confirmPassword && password !== confirmPassword) {
             event.preventDefault(); // Stop form submission ONLY if passwords don't match
             showToast('Passwords do not match.', 'error');
+            if (confirmPasswordInput) {
+                confirmPasswordInput.focus();
+            }
         }
     });
 }

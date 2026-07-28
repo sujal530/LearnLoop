@@ -1,22 +1,9 @@
 /**
  * roadmap.js
  * -----------------------------------------------------------------------
- * Renders the learner's roadmap and daily task checklist inside
- * #roadmap-container.
+ * Renders the learner's roadmap timeline and task list inside #roadmap-container.
  *
- * DEPENDS ON (must load before this file): script.js -> fetchJson(), getEmbeddedData(), showToast()
- *
- * DATA SOURCE: embedded JSON (<script type="application/json" id="roadmap-data">
- * rendered on GET /roadmap) with a GET /roadmap fallback. Expected shape:
- *   { roadmap: [{ id, title, description, difficulty }, ...],
- *     tasks:   [{ id, user_id, title, description, status, deadline }, ...] }
- *
- * SCOPE NOTE: Tasks has no column linking it back to a specific Roadmap row
- * (no roadmap_id/topic foreign key in the given schema), so this file does
- * NOT try to guess which tasks belong to which roadmap card — that would be
- * a fragile string match. Instead it renders two honest sections: the
- * roadmap itself, and the flat "Today's Tasks" checklist. Once models/ adds
- * a linking column, grouping can be added here in one place.
+ * DEPENDS ON: script.js -> fetchJson(), getEmbeddedData(), showToast()
  */
 
 async function loadRoadmapData() {
@@ -30,140 +17,182 @@ async function loadRoadmapData() {
         return roadmapData || { roadmap: [], tasks: [] };
     } catch (error) {
         console.error('Error loading roadmap data:', error);
-        showToast('Could not load your roadmap. Please try again.', 'error');
+        if (typeof showToast === 'function') {
+            showToast('Could not load your roadmap. Please try again.', 'error');
+        }
         return { roadmap: [], tasks: [] };
     }
 }
 
 /**
- * Builds one roadmap card.
- * @param {{title: string, description: string, difficulty: string}} roadmapItem
+ * Builds one roadmap card matching roadmap.css structure.
  */
-function buildRoadmapCard(roadmapItem) {
-    const roadmapCard = document.createElement('div');
-    roadmapCard.className = 'roadmap-card';
+function buildRoadmapCard(item, index) {
+    const isCompleted = item.completion === 100;
+    const isActive = item.completion > 0 && !isCompleted;
+    const statusClass = isCompleted ? 'roadmap-node--completed' : (isActive ? 'roadmap-node--active' : '');
+    const badgeSymbol = isCompleted ? '✓' : (index + 1);
 
-    const cardTitle = document.createElement('h3');
-    cardTitle.className = 'roadmap-card-title';
-    cardTitle.textContent = roadmapItem.title;
+    const link = document.createElement('a');
+    link.href = item.id ? `/topic/${item.id}` : '#';
+    link.className = `roadmap-node ${statusClass}`;
 
-    const difficultyBadge = document.createElement('span');
-    difficultyBadge.className = `roadmap-card-difficulty roadmap-card-difficulty-${(roadmapItem.difficulty || '').toLowerCase()}`;
-    difficultyBadge.textContent = roadmapItem.difficulty;
+    const difficulty = (item.difficulty || 'beginner').toLowerCase();
 
-    const cardDescription = document.createElement('p');
-    cardDescription.className = 'roadmap-card-description';
-    cardDescription.textContent = roadmapItem.description;
+    link.innerHTML = `
+        <div class="roadmap-node-body">
+            <div class="roadmap-node-head">
+                <h3 class="roadmap-node-title">
+                    <span class="node-index">${badgeSymbol}</span>
+                    ${item.title || 'Untitled Topic'}
+                </h3>
+                <span class="difficulty-pill difficulty-${difficulty}">${item.difficulty || 'Beginner'}</span>
+            </div>
+            <p class="roadmap-node-description">${item.description || 'No description provided.'}</p>
+            <div class="roadmap-node-meta">
+                <div class="progress-bar">
+                    <div class="progress-bar-fill" style="width: ${item.completion || 0}%;"></div>
+                </div>
+                <span class="progress-label">${item.completion || 0}% complete</span>
+            </div>
+        </div>
+    `;
 
-    roadmapCard.appendChild(cardTitle);
-    roadmapCard.appendChild(difficultyBadge);
-    roadmapCard.appendChild(cardDescription);
-
-    return roadmapCard;
+    return link;
 }
 
 /**
- * Builds one checklist row for a task, wired to toggle its status.
- * @param {{id: number, title: string, status: string}} task
+ * Builds one task checklist row matching roadmap.css.
  */
 function buildTaskChecklistItem(task) {
-    const taskItem = document.createElement('li');
-    taskItem.className = 'roadmap-task-item';
+    const taskItem = document.createElement('div');
+    taskItem.className = `task-item ${task.status === 'completed' ? 'task-item--completed' : ''}`;
 
-    const taskCheckbox = document.createElement('input');
-    taskCheckbox.type = 'checkbox';
-    taskCheckbox.checked = task.status === 'completed';
-    taskCheckbox.addEventListener('change', () => handleTaskStatusToggle(task.id, taskCheckbox.checked));
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'task-checkbox';
+    checkbox.checked = task.status === 'completed';
 
-    const taskLabel = document.createElement('span');
-    taskLabel.className = 'roadmap-task-label';
-    taskLabel.textContent = task.title;
+    const titleSpan = document.createElement('span');
+    titleSpan.className = 'task-title';
+    titleSpan.textContent = task.title;
 
-    taskItem.appendChild(taskCheckbox);
-    taskItem.appendChild(taskLabel);
+    checkbox.addEventListener('change', () => {
+        const isChecked = checkbox.checked;
+        taskItem.classList.toggle('task-item--completed', isChecked);
+        handleTaskStatusToggle(task.id, isChecked);
+    });
+
+    taskItem.appendChild(checkbox);
+    taskItem.appendChild(titleSpan);
+
+    if (task.deadline || task.due_label) {
+        const deadlineSpan = document.createElement('span');
+        deadlineSpan.className = 'task-deadline';
+        deadlineSpan.textContent = task.deadline || task.due_label;
+        taskItem.appendChild(deadlineSpan);
+    }
+
     return taskItem;
 }
 
 /**
- * Renders the roadmap section and the daily task checklist section.
+ * Renders the page header, roadmap timeline, and daily tasks section.
  */
 function renderRoadmap(roadmapData) {
     const roadmapContainer = document.getElementById('roadmap-container');
-    if (!roadmapContainer) {
-        return;
-    }
+    if (!roadmapContainer) return;
 
     const roadmapItems = roadmapData.roadmap || [];
     const dailyTasks = roadmapData.tasks || [];
 
     roadmapContainer.innerHTML = '';
 
-    const roadmapSection = document.createElement('div');
-    roadmapSection.className = 'roadmap-section';
+    // Header Section
+    const headerDiv = document.createElement('div');
+    headerDiv.className = 'roadmap-header';
+    headerDiv.innerHTML = `
+        <div>
+            <h1 class="page-title">Your Learning Roadmap</h1>
+            <p class="subtitle">A personalized path built around your goals.</p>
+        </div>
+        <div class="page-head-actions">
+            <select class="select-input" id="roadmap-difficulty-filter">
+                <option value="all">All difficulties</option>
+                <option value="beginner">Beginner</option>
+                <option value="intermediate">Intermediate</option>
+                <option value="advanced">Advanced</option>
+            </select>
+        </div>
+    `;
+    roadmapContainer.appendChild(headerDiv);
 
-    const roadmapHeading = document.createElement('h2');
-    roadmapHeading.textContent = 'Your Learning Roadmap';
-    roadmapSection.appendChild(roadmapHeading);
+    // Roadmap Timeline
+    const timelineSection = document.createElement('section');
+    timelineSection.className = 'roadmap-timeline';
+    timelineSection.id = 'roadmap-track';
 
     if (roadmapItems.length === 0) {
-        const emptyMessage = document.createElement('p');
-        emptyMessage.className = 'roadmap-empty-state';
-        emptyMessage.textContent = 'Your roadmap has not been generated yet.';
-        roadmapSection.appendChild(emptyMessage);
+        const emptyNode = document.createElement('div');
+        emptyNode.className = 'roadmap-node';
+        emptyNode.innerHTML = `<p class="roadmap-node-description">Your roadmap has not been generated yet.</p>`;
+        timelineSection.appendChild(emptyNode);
     } else {
-        roadmapItems.forEach((roadmapItem) => {
-            roadmapSection.appendChild(buildRoadmapCard(roadmapItem));
+        roadmapItems.forEach((item, index) => {
+            timelineSection.appendChild(buildRoadmapCard(item, index));
         });
     }
+    roadmapContainer.appendChild(timelineSection);
 
-    const taskSection = document.createElement('div');
-    taskSection.className = 'roadmap-task-section';
+    // Tasks Section
+    if (dailyTasks.length > 0) {
+        const taskSection = document.createElement('section');
+        taskSection.style.marginTop = '2rem';
+        
+        const taskHeading = document.createElement('h2');
+        taskHeading.style.marginBottom = '1rem';
+        taskHeading.textContent = "Today's Tasks";
+        taskSection.appendChild(taskHeading);
 
-    const taskHeading = document.createElement('h2');
-    taskHeading.textContent = "Today's Tasks";
-    taskSection.appendChild(taskHeading);
+        const taskList = document.createElement('div');
+        taskList.className = 'task-list';
 
-    const taskList = document.createElement('ul');
-    taskList.className = 'roadmap-task-list';
-
-    if (dailyTasks.length === 0) {
-        const emptyTaskItem = document.createElement('li');
-        emptyTaskItem.className = 'roadmap-task-item-empty';
-        emptyTaskItem.textContent = 'No tasks scheduled yet.';
-        taskList.appendChild(emptyTaskItem);
-    } else {
         dailyTasks.forEach((task) => taskList.appendChild(buildTaskChecklistItem(task)));
+        taskSection.appendChild(taskList);
+        roadmapContainer.appendChild(taskSection);
     }
-
-    taskSection.appendChild(taskList);
-
-    roadmapContainer.appendChild(roadmapSection);
-    roadmapContainer.appendChild(taskSection);
 }
 
 /**
- * Persists a task completion toggle back to the backend.
- * @param {number} taskId
- * @param {boolean} isCompleted
+ * Persists task completion toggle back to server.
  */
 async function handleTaskStatusToggle(taskId, isCompleted) {
     try {
-        await fetchJson('/tasks', {
+        const response = await fetch('/tasks', {
             method: 'POST',
-            body: { id: taskId, status: isCompleted ? 'completed' : 'pending' }
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: taskId,
+                status: isCompleted ? 'completed' : 'pending'
+            })
         });
-        showToast(isCompleted ? 'Task marked complete!' : 'Task marked pending.', 'info');
+
+        if (!response.ok) throw new Error(`Server status ${response.status}`);
+
+        if (typeof showToast === 'function') {
+            showToast(isCompleted ? 'Task marked complete!' : 'Task marked pending.', 'info');
+        }
     } catch (error) {
         console.error('Error updating task status:', error);
-        showToast('Could not update task status.', 'error');
+        if (typeof showToast === 'function') {
+            showToast('Could not update task status.', 'error');
+        }
     }
 }
 
 async function initRoadmapPage() {
     const roadmapContainer = document.getElementById('roadmap-container');
-    if (!roadmapContainer) {
-        return;
-    }
+    if (!roadmapContainer) return;
 
     const roadmapData = await loadRoadmapData();
     renderRoadmap(roadmapData);

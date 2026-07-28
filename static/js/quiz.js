@@ -3,18 +3,6 @@
  * -----------------------------------------------------------------------
  * Runs the quiz flow inside #quiz-container: loads questions, tracks the
  * learner's answers, scores the attempt, and submits the result.
- *
- * DEPENDS ON (must load before this file): script.js -> fetchJson(), getEmbeddedData(), showToast()
- *
- * DATA SOURCE: embedded JSON (<script type="application/json" id="quiz-data">
- * rendered on GET /quiz) with a GET /quiz fallback. Each question matches the
- * Quiz table: { id, topic, question, option_a, option_b, option_c, option_d, correct_answer }.
- *
- * ASSUMPTION: Quiz.correct_answer stores one of the literal strings
- * "option_a" | "option_b" | "option_c" | "option_d" (i.e. it names the
- * correct column). If the models/ owner stores it differently (e.g. the
- * answer text itself), only the comparison in handleAnswerSelection() needs
- * to change.
  */
 
 let quizQuestions = [];
@@ -33,19 +21,19 @@ async function loadQuizQuestions() {
         return quizData || [];
     } catch (error) {
         console.error('Error loading quiz questions:', error);
-        showToast('Could not load quiz questions. Please try again.', 'error');
+        if (typeof showToast === 'function') {
+            showToast('Could not load quiz questions. Please try again.', 'error');
+        }
         return [];
     }
 }
 
 /**
- * Renders the current question and its four options inside #quiz-container.
+ * Renders the current question and its available options inside #quiz-container.
  */
 function renderCurrentQuestion() {
     const quizContainer = document.getElementById('quiz-container');
-    if (!quizContainer) {
-        return;
-    }
+    if (!quizContainer) return;
 
     const currentQuestion = quizQuestions[currentQuestionIndex];
     if (!currentQuestion) {
@@ -67,11 +55,17 @@ function renderCurrentQuestion() {
     optionsList.className = 'quiz-options';
 
     const optionKeys = ['option_a', 'option_b', 'option_c', 'option_d'];
+    
     optionKeys.forEach((optionKey) => {
+        const optionValue = currentQuestion[optionKey];
+        
+        // Skip null or empty options (e.g., for true/false or 3-option questions)
+        if (!optionValue) return;
+
         const optionButton = document.createElement('button');
         optionButton.type = 'button';
         optionButton.className = 'quiz-option';
-        optionButton.textContent = currentQuestion[optionKey];
+        optionButton.textContent = optionValue;
         optionButton.addEventListener('click', () => handleAnswerSelection(optionKey));
         optionsList.appendChild(optionButton);
     });
@@ -82,12 +76,17 @@ function renderCurrentQuestion() {
 }
 
 /**
- * Records the learner's choice, updates the score, and advances to the next question.
+ * Records choice, updates score, and moves to the next question.
  * @param {'option_a'|'option_b'|'option_c'|'option_d'} selectedOptionKey
  */
 function handleAnswerSelection(selectedOptionKey) {
     const currentQuestion = quizQuestions[currentQuestionIndex];
-    const isCorrect = selectedOptionKey === currentQuestion.correct_answer;
+    
+    // Normalizes comparison (in case correct_answer is 'option_a' vs 'Option_A')
+    const normalizedSelected = (selectedOptionKey || '').toLowerCase();
+    const normalizedCorrect = (currentQuestion.correct_answer || '').toLowerCase();
+    
+    const isCorrect = normalizedSelected === normalizedCorrect;
 
     if (isCorrect) {
         correctAnswerCount += 1;
@@ -105,54 +104,63 @@ function handleAnswerSelection(selectedOptionKey) {
 }
 
 /**
- * Renders the final score and submits the attempt to the backend.
+ * Displays the final score and submits results to Flask.
  */
 async function renderQuizResults() {
     const quizContainer = document.getElementById('quiz-container');
-    if (!quizContainer) {
-        return;
-    }
+    if (!quizContainer) return;
 
-    const scorePercentage = quizQuestions.length
-        ? Math.round((correctAnswerCount / quizQuestions.length) * 100)
+    const totalQuestions = quizQuestions.length;
+    const scorePercentage = totalQuestions
+        ? Math.round((correctAnswerCount / totalQuestions) * 100)
         : 0;
 
-    quizContainer.innerHTML = '';
-
-    const resultHeading = document.createElement('h3');
-    resultHeading.className = 'quiz-result-heading';
-    resultHeading.textContent = 'Quiz Complete!';
-
-    const resultScore = document.createElement('p');
-    resultScore.className = 'quiz-result-score';
-    resultScore.textContent = `You scored ${correctAnswerCount} out of ${quizQuestions.length} (${scorePercentage}%)`;
-
-    quizContainer.appendChild(resultHeading);
-    quizContainer.appendChild(resultScore);
+    quizContainer.innerHTML = `
+        <div class="quiz-result-card">
+            <h3 class="quiz-result-heading">Quiz Complete!</h3>
+            <p class="quiz-result-score">You scored ${correctAnswerCount} out of ${totalQuestions} (${scorePercentage}%)</p>
+            <button type="button" class="btn btn-primary" onclick="initQuizPage()">Retake Quiz</button>
+        </div>
+    `;
 
     try {
-        await fetchJson('/quiz', {
+        // Direct fetch request with explicit headers for JSON payloads
+        const response = await fetch('/quiz', {
             method: 'POST',
-            body: { answers: learnerAnswers, score: scorePercentage }
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                answers: learnerAnswers,
+                score: scorePercentage
+            })
         });
+
+        if (!response.ok) {
+            throw new Error(`Server returned status ${response.status}`);
+        }
+        
+        if (typeof showToast === 'function') {
+            showToast('Quiz results saved successfully!', 'success');
+        }
     } catch (error) {
         console.error('Error submitting quiz results:', error);
-        showToast('Your score could not be saved. Check your connection.', 'error');
+        if (typeof showToast === 'function') {
+            showToast('Your score could not be saved. Check your connection.', 'error');
+        }
     }
 }
 
 async function initQuizPage() {
     const quizContainer = document.getElementById('quiz-container');
-    if (!quizContainer) {
-        return;
-    }
+    if (!quizContainer) return;
 
     quizQuestions = await loadQuizQuestions();
     currentQuestionIndex = 0;
     correctAnswerCount = 0;
     learnerAnswers.length = 0;
 
-    if (quizQuestions.length === 0) {
+    if (!Array.isArray(quizQuestions) || quizQuestions.length === 0) {
         quizContainer.innerHTML = '<p class="quiz-empty-state">No quiz questions available right now.</p>';
         return;
     }

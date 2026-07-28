@@ -37,7 +37,6 @@
         <div class="task-card">
           <h4>{{ task.title }}</h4>
           <p>{{ task.description }}</p>
-          {% if task.category %}<span class="badge">{{ task.category }}</span>{% endif %}
           {% if task.due_date %}<span class="task-date">📅 {{ task.due_date }}</span>{% endif %}
         </div>
         {% else %}
@@ -53,7 +52,6 @@
         <div class="task-card">
           <h4>{{ task.title }}</h4>
           <p>{{ task.description }}</p>
-          {% if task.category %}<span class="badge">{{ task.category }}</span>{% endif %}
           {% if task.due_date %}<span class="task-date">📅 {{ task.due_date }}</span>{% endif %}
         </div>
         {% else %}
@@ -91,21 +89,6 @@
         <div class="form-group">
           <label for="description">Description</label>
           <textarea id="description" name="description" class="form-control" placeholder="Task description"></textarea>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="category">Category</label>
-            <input type="text" id="category" name="category" class="form-control" value="Learning" placeholder="e.g. Learning, Work">
-          </div>
-          <div class="form-group">
-            <label for="priority">Priority</label>
-            <select id="priority" name="priority" class="form-control">
-              <option value="Low">Low</option>
-              <option value="Medium" selected>Medium</option>
-              <option value="High">High</option>
-            </select>
-          </div>
         </div>
 
         <div class="form-row">

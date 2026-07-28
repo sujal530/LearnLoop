@@ -1,143 +1,169 @@
-/* ==========================================================================
-   LearnLoop — Roadmap & Tasks
-   #roadmap-container : page wrapper
-   .roadmap-node       : single milestone on the timeline
-   .task-item          : task row toggled by handleTaskStatusToggle (roadmap.js)
-   Depends on tokens defined in style.css — load style.css first.
-   ========================================================================== */
-
-#roadmap-container {
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
+/* Container & General Layout */
+.roadmap-container {
+  max-width: 850px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-.roadmap-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
+.page-head {
+  margin-bottom: 2.5rem;
 }
 
-.roadmap-header .subtitle { color: var(--slate-500); font-size: 0.9rem; }
+.page-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #0f172a;
+}
 
-/* ---------- Timeline: the "loop" connecting each milestone ---------- */
+.page-subtitle {
+  font-size: 0.95rem;
+  color: #64748b;
+}
+
+/* Main Train Line */
 .roadmap-timeline {
   position: relative;
+  padding-left: 2rem;
+  border-left: 4px solid #3b82f6; /* Main Track Line */
+  margin-left: 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  padding-left: 36px;
+  gap: 2rem;
 }
 
-.roadmap-timeline::before {
-  content: "";
-  position: absolute;
-  left: 11px;
-  top: 8px;
-  bottom: 8px;
-  border-left: 2px dashed var(--slate-100);
-}
-
-.roadmap-node {
+/* Timeline Node (Details Accordion) */
+.timeline-node {
   position: relative;
-  background: var(--paper-0);
-  border: 1px solid var(--slate-100);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-card);
-  padding: 18px 20px;
+  list-style: none;
 }
 
-.roadmap-node::before {
-  content: "";
+/* Hide default HTML details triangle */
+.timeline-node summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Major Station Dot along the main track */
+.timeline-node::before {
+  content: '';
   position: absolute;
-  left: -36px;
-  top: 22px;
-  width: 22px;
-  height: 22px;
+  left: -2.65rem;
+  top: 1.25rem;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background: var(--paper-0);
-  border: 3px solid var(--slate-300);
+  background-color: #2563eb;
+  border: 3px solid #ffffff;
+  box-shadow: 0 0 0 3px #93c5fd;
+  z-index: 3;
 }
 
-.roadmap-node--completed::before {
-  border-color: var(--loop-teal-500);
-  background: var(--loop-teal-500);
+/* Major Station Card */
+.timeline-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  cursor: pointer;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  user-select: none;
 }
 
-.roadmap-node--active::before { border-color: var(--spark-amber-500); }
+.timeline-card:hover {
+  border-color: #93c5fd;
+  transform: translateX(4px);
+}
 
-.roadmap-node-title {
+.week-pill {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #2563eb;
+  background-color: #eff6ff;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  margin-bottom: 0.4rem;
+}
+
+.card-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 10px;
-  font-family: var(--font-display);
-  font-weight: 600;
-  color: var(--ink-900);
 }
 
-.roadmap-node-description {
-  margin-top: 6px;
+.card-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.expand-icon {
+  font-size: 1.2rem;
+  color: #64748b;
+  transition: transform 0.2s ease;
+}
+
+.timeline-node[open] .expand-icon {
+  transform: rotate(180deg);
+}
+
+.card-description {
   font-size: 0.9rem;
-  color: var(--slate-500);
+  color: #64748b;
+  margin-top: 0.4rem;
 }
 
-.roadmap-node-meta {
-  margin-top: 12px;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-/* ---------- Task list attached to each node ---------- */
-.task-list {
-  margin-top: 14px;
+/* Intermediate Sub-Stops (Daily Breakdown) */
+.sub-timeline {
+  margin-top: 0.75rem;
+  margin-left: 1rem;
+  padding-left: 1.25rem;
+  border-left: 2px dashed #94a3b8; /* Intermediate Track */
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0.75rem;
+  animation: fadeIn 0.25s ease-in-out;
 }
 
-.task-item {
+.sub-stop {
+  position: relative;
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
-  background: var(--paper-50);
-  font-size: 0.9rem;
-  transition: background var(--transition-base);
+  align-items: flex-start;
+  background: #f8fafc;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #f1f5f9;
 }
 
-.task-item:hover { background: var(--loop-teal-100); }
-
-.task-checkbox {
-  width: 18px;
-  height: 18px;
+/* Small Sub-Stop Dot */
+.sub-dot {
+  position: absolute;
+  left: -1.65rem;
+  top: 1rem;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  border: 2px solid var(--slate-300);
-  flex-shrink: 0;
-  display: grid;
-  place-items: center;
-  transition: background var(--transition-base), border-color var(--transition-base);
+  background-color: #64748b;
+  border: 2px solid #ffffff;
 }
 
-.task-item--completed .task-checkbox {
-  background: var(--loop-teal-500);
-  border-color: var(--loop-teal-500);
-}
-
-.task-item--completed .task-title {
-  color: var(--slate-300);
-  text-decoration: line-through;
-}
-
-.task-title { flex: 1; color: var(--ink-900); }
-
-.task-deadline {
-  font-family: var(--font-mono);
+.day-label {
   font-size: 0.75rem;
-  color: var(--slate-500);
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
 }
 
-.task-deadline--overdue { color: var(--coral-500); font-weight: 600; }
+.sub-info p {
+  font-size: 0.85rem;
+  color: #334155;
+  margin: 0.2rem 0 0 0;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
