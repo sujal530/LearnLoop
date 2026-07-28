@@ -18,19 +18,17 @@ def init_db():
 
     # Create tasks table with all required columns
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS tasks (
+        CREATE TABLE IF NOT EXISTS mentor_chats (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
-            roadmap_id INTEGER DEFAULT 0,
-            title TEXT NOT NULL,
-            description TEXT,
-            category TEXT DEFAULT 'Learning',
-            priority TEXT DEFAULT 'Medium',
-            estimated_time INTEGER DEFAULT 60,
-            status TEXT DEFAULT 'pending',
-            due_date TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
+            sender TEXT NOT NULL,
+            message TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+           FOREIGN KEY(user_id)
+           REFERENCES users(id)
+           ON DELETE CASCADE
+    )
     """)
 
     conn.commit()

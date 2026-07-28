@@ -1,12 +1,6 @@
-"""
-ai/ai_service.py
-
-AI Service module handling integration with Google Gemini / Generative AI.
-Provides fallback mock responses if GEMINI_API_KEY is not configured.
-"""
-
 import os
 import logging
+from google import genai
 from config import Config
 
 logger = logging.getLogger(__name__)
@@ -14,78 +8,81 @@ logger = logging.getLogger(__name__)
 
 class AIService:
     def __init__(self):
-        self.api_key = getattr(Config, "GEMINI_API_KEY", None) or os.getenv("GEMINI_API_KEY")
-        self.model = None
+        self.api_key = Config.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY")
 
         if not self.api_key:
-            logger.warning("GEMINI_API_KEY is missing. Running AIService in Fallback / Mock Mode.")
+            print("❌ GEMINI_API_KEY not found")
+            self.client = None
         else:
             try:
-                import google.generativeai as genai
-                genai.configure(api_key=self.api_key)
-                self.model = genai.GenerativeModel("gemini-pro")
+                self.client = genai.Client(api_key=self.api_key)
+                print("✅ Gemini Client Initialized")
             except Exception as e:
-                logger.error(f"Failed to initialize Gemini AI model: {e}")
-                self.model = None
+                print("Gemini Initialization Error:", e)
+                self.client = None
 
-    def generate_tasks(self, topic: str) -> list:
-        """Generates a list of recommended daily study tasks for a given topic."""
-        if self.model:
-            try:
-                prompt = f"Generate 3 concise, actionable learning tasks for studying '{topic}'. Return each task on a new line."
-                response = self.model.generate_content(prompt)
-                if response and response.text:
-                    tasks = [line.strip("- ").strip() for line in response.text.strip().split("\n") if line.strip()]
-                    return tasks[:5]
-            except Exception as e:
-                logger.error(f"AI Task Generation Error: {e}")
+    def mentor_chat(self, message, history=None):
+        if not self.client:
+            return "Gemini client is not initialized."
 
-        # Fallback tasks if API key is missing or call fails
-        return [
-            f"Review fundamental concepts of {topic}",
-            f"Complete practical exercises on {topic}",
-            f"Summarize key takeaways for {topic}"
-        ]
+        try:
+            response = self.client.models.generate_content(
+                model="gemini-3.6-flash",
+                contents=message
+            )
 
-    def generate_roadmap(self, goal_title: str, target_weeks: int = 4) -> dict:
-        """Generates a structured learning roadmap with weekly milestones."""
-        if self.model:
-            try:
-                prompt = f"Create a {target_weeks}-week learning roadmap for '{goal_title}'. List 1 key milestone per week."
-                response = self.model.generate_content(prompt)
-                if response and response.text:
-                    lines = [line.strip("- ").strip() for line in response.text.strip().split("\n") if line.strip()]
-                    milestones = lines[:target_weeks]
-                    return {
-                        "title": goal_title,
-                        "duration_weeks": target_weeks,
-                        "milestones": milestones
-                    }
-            except Exception as e:
-                logger.error(f"AI Roadmap Generation Error: {e}")
+            return response.text
 
-        # Fallback roadmap if API key is missing or call fails
-        return {
-            "title": goal_title,
-            "duration_weeks": target_weeks,
-            "milestones": [
-                f"Week {i+1}: Fundamentals & Basics of {goal_title}" if i == 0 else f"Week {i+1}: Advanced Topics & Practice for {goal_title}"
-                for i in range(target_weeks)
-            ]
-        }
+        except Exception as e:
+            print("AI Mentor Error:", e)
+            return f"Error: {e}"
 
-    def ask_mentor(self, question: str) -> str:
-        """Responds to user questions as an AI mentor."""
-        if self.model:
-            try:
-                response = self.model.generate_content(question)
-                if response and response.text:
-                    return response.text
-            except Exception as e:
-                logger.error(f"AI Mentor Error: {e}")
+    def generate_quiz(self, topic, difficulty="Beginner"):
+    
+        prompt = f"""
+You are an expert quiz generator.
 
-        return "I'm currently running in offline mode. Please configure your GEMINI_API_KEY to enable live AI responses!"
+Create exactly 5 multiple choice questions.
+
+Topic:
+{topic}
+
+Difficulty:
+{difficulty}
+
+Return EXACTLY in this format.
+
+Question 1:
+What is Python?
+A. Programming Language
+B. Database
+C. Browser
+D. Operating System
+Answer: A
+
+Question 2:
+...
+
+Do not use markdown.
+
+Do not write explanations.
+
+Do not write anything except the quiz.
+"""
+
+        return self.mentor_chat(prompt)
+
+    def generate_roadmap(self, goal, level, study_time, deadline):
+        prompt = f"""
+Create a detailed learning roadmap.
+
+Goal: {goal}
+Level: {level}
+Study Time: {study_time} hours/day
+Deadline: {deadline}
+"""
+
+        return self.mentor_chat(prompt)
 
 
-# Singleton instance
 ai_service = AIService()

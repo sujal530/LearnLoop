@@ -19,6 +19,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 from config import Config
 from utils.decorators import login_required
+from models.user import User
 
 
 auth_bp = Blueprint("auth", __name__)

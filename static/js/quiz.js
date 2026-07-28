@@ -1,171 +1,232 @@
-/**
- * quiz.js
- * -----------------------------------------------------------------------
- * Runs the quiz flow inside #quiz-container: loads questions, tracks the
- * learner's answers, scores the attempt, and submits the result.
- */
+let questions = [];
+let currentQuestion = 0;
+let score = 0;
 
-let quizQuestions = [];
-let currentQuestionIndex = 0;
-let correctAnswerCount = 0;
-const learnerAnswers = [];
+// Generate Quiz
+document.getElementById("generate-btn").addEventListener("click", generateQuiz);
 
-async function loadQuizQuestions() {
-    const embeddedData = getEmbeddedData('quiz-data');
-    if (embeddedData) {
-        return embeddedData;
-    }
+async function generateQuiz() {
 
-    try {
-        const quizData = await fetchJson('/quiz');
-        return quizData || [];
-    } catch (error) {
-        console.error('Error loading quiz questions:', error);
-        if (typeof showToast === 'function') {
-            showToast('Could not load quiz questions. Please try again.', 'error');
-        }
-        return [];
-    }
-}
+    const topic = document.getElementById("quiz-topic").value.trim();
+    const difficulty = document.getElementById("quiz-difficulty").value;
 
-/**
- * Renders the current question and its available options inside #quiz-container.
- */
-function renderCurrentQuestion() {
-    const quizContainer = document.getElementById('quiz-container');
-    if (!quizContainer) return;
-
-    const currentQuestion = quizQuestions[currentQuestionIndex];
-    if (!currentQuestion) {
-        renderQuizResults();
+    if (!topic) {
+        alert("Please enter a topic.");
         return;
     }
 
-    quizContainer.innerHTML = '';
-
-    const questionProgress = document.createElement('p');
-    questionProgress.className = 'quiz-progress';
-    questionProgress.textContent = `Question ${currentQuestionIndex + 1} of ${quizQuestions.length}`;
-
-    const questionText = document.createElement('h3');
-    questionText.className = 'quiz-question';
-    questionText.textContent = currentQuestion.question;
-
-    const optionsList = document.createElement('div');
-    optionsList.className = 'quiz-options';
-
-    const optionKeys = ['option_a', 'option_b', 'option_c', 'option_d'];
-    
-    optionKeys.forEach((optionKey) => {
-        const optionValue = currentQuestion[optionKey];
-        
-        // Skip null or empty options (e.g., for true/false or 3-option questions)
-        if (!optionValue) return;
-
-        const optionButton = document.createElement('button');
-        optionButton.type = 'button';
-        optionButton.className = 'quiz-option';
-        optionButton.textContent = optionValue;
-        optionButton.addEventListener('click', () => handleAnswerSelection(optionKey));
-        optionsList.appendChild(optionButton);
-    });
-
-    quizContainer.appendChild(questionProgress);
-    quizContainer.appendChild(questionText);
-    quizContainer.appendChild(optionsList);
-}
-
-/**
- * Records choice, updates score, and moves to the next question.
- * @param {'option_a'|'option_b'|'option_c'|'option_d'} selectedOptionKey
- */
-function handleAnswerSelection(selectedOptionKey) {
-    const currentQuestion = quizQuestions[currentQuestionIndex];
-    
-    // Normalizes comparison (in case correct_answer is 'option_a' vs 'Option_A')
-    const normalizedSelected = (selectedOptionKey || '').toLowerCase();
-    const normalizedCorrect = (currentQuestion.correct_answer || '').toLowerCase();
-    
-    const isCorrect = normalizedSelected === normalizedCorrect;
-
-    if (isCorrect) {
-        correctAnswerCount += 1;
-    }
-
-    learnerAnswers.push({
-        quizId: currentQuestion.id,
-        topic: currentQuestion.topic,
-        selectedOption: selectedOptionKey,
-        isCorrect
-    });
-
-    currentQuestionIndex += 1;
-    renderCurrentQuestion();
-}
-
-/**
- * Displays the final score and submits results to Flask.
- */
-async function renderQuizResults() {
-    const quizContainer = document.getElementById('quiz-container');
-    if (!quizContainer) return;
-
-    const totalQuestions = quizQuestions.length;
-    const scorePercentage = totalQuestions
-        ? Math.round((correctAnswerCount / totalQuestions) * 100)
-        : 0;
-
-    quizContainer.innerHTML = `
-        <div class="quiz-result-card">
-            <h3 class="quiz-result-heading">Quiz Complete!</h3>
-            <p class="quiz-result-score">You scored ${correctAnswerCount} out of ${totalQuestions} (${scorePercentage}%)</p>
-            <button type="button" class="btn btn-primary" onclick="initQuizPage()">Retake Quiz</button>
-        </div>
-    `;
+    document.getElementById("generate-btn").disabled = true;
+    document.getElementById("generate-btn").innerText = "Generating...";
 
     try {
-        // Direct fetch request with explicit headers for JSON payloads
-        const response = await fetch('/quiz', {
-            method: 'POST',
+
+        const response = await fetch("/quiz/generate", {
+            method: "POST",
             headers: {
-                'Content-Type': 'application/json'
+                "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                answers: learnerAnswers,
-                score: scorePercentage
+                topic: topic,
+                difficulty: difficulty
             })
         });
 
-        if (!response.ok) {
-            throw new Error(`Server returned status ${response.status}`);
+        const data = await response.json();
+
+        if (data.error) {
+            alert(data.error);
+            resetButton();
+            return;
         }
-        
-        if (typeof showToast === 'function') {
-            showToast('Quiz results saved successfully!', 'success');
+
+        questions = parseQuiz(data.quiz);
+
+        if (questions.length === 0) {
+            alert("Gemini returned an invalid quiz.");
+            resetButton();
+            return;
         }
-    } catch (error) {
-        console.error('Error submitting quiz results:', error);
-        if (typeof showToast === 'function') {
-            showToast('Your score could not be saved. Check your connection.', 'error');
-        }
+
+        currentQuestion = 0;
+        score = 0;
+
+        document.getElementById("quiz-box").style.display = "block";
+        document.getElementById("result-box").style.display = "none";
+
+        showQuestion();
+
     }
+    catch (err) {
+
+        console.error(err);
+        alert("Error generating quiz.");
+
+    }
+
+    resetButton();
 }
 
-async function initQuizPage() {
-    const quizContainer = document.getElementById('quiz-container');
-    if (!quizContainer) return;
+function resetButton(){
 
-    quizQuestions = await loadQuizQuestions();
-    currentQuestionIndex = 0;
-    correctAnswerCount = 0;
-    learnerAnswers.length = 0;
+    document.getElementById("generate-btn").disabled = false;
+    document.getElementById("generate-btn").innerText = "🚀 Generate AI Quiz";
 
-    if (!Array.isArray(quizQuestions) || quizQuestions.length === 0) {
-        quizContainer.innerHTML = '<p class="quiz-empty-state">No quiz questions available right now.</p>';
+}
+
+// ----------------------
+// Parse Gemini Response
+// ----------------------
+
+function parseQuiz(text){
+
+    const quiz = [];
+
+    const blocks = text.split("Question");
+
+    blocks.forEach(block=>{
+
+        if(block.trim()==="") return;
+
+        const lines = block.trim().split("\n");
+
+        if(lines.length<6) return;
+
+        quiz.push({
+
+            question: lines[0].replace(":","").trim(),
+
+            options: [
+
+                lines[1].replace("A.","").trim(),
+                lines[2].replace("B.","").trim(),
+                lines[3].replace("C.","").trim(),
+                lines[4].replace("D.","").trim()
+
+            ],
+
+            answer: lines[5]
+                .replace("Answer:","")
+                .trim()
+                .charAt(0)
+
+        });
+
+    });
+
+    return quiz;
+
+}
+
+// ----------------------
+// Show Question
+// ----------------------
+
+function showQuestion(){
+
+    if(currentQuestion>=questions.length){
+
+        finishQuiz();
         return;
+
     }
 
-    renderCurrentQuestion();
+    const q = questions[currentQuestion];
+
+    document.getElementById("question-title").innerHTML =
+        `Question ${currentQuestion+1}<br><br>${q.question}`;
+
+    const container = document.getElementById("options-container");
+
+    container.innerHTML="";
+
+    q.options.forEach((option,index)=>{
+
+        const letter = ["A","B","C","D"][index];
+
+        container.innerHTML += `
+        <div style="margin-bottom:15px">
+
+            <label>
+
+                <input
+                    type="radio"
+                    name="answer"
+                    value="${letter}"
+                >
+
+                ${letter}. ${option}
+
+            </label>
+
+        </div>
+        `;
+
+    });
+
 }
 
-document.addEventListener('DOMContentLoaded', initQuizPage);
+// ----------------------
+// Next Button
+// ----------------------
+
+document.getElementById("next-btn").addEventListener("click",()=>{
+
+    const selected =
+        document.querySelector('input[name="answer"]:checked');
+
+    if(!selected){
+
+        alert("Select an answer.");
+        return;
+
+    }
+
+    if(selected.value===questions[currentQuestion].answer){
+
+        score++;
+
+    }
+
+    currentQuestion++;
+
+    showQuestion();
+
+});
+
+// ----------------------
+// Finish
+// ----------------------
+
+async function finishQuiz(){
+
+    document.getElementById("quiz-box").style.display="none";
+    document.getElementById("result-box").style.display="block";
+
+    const percent =
+        Math.round(score/questions.length*100);
+
+    document.getElementById("final-score").innerHTML=
+
+        `Score : ${score}/${questions.length}<br>
+         Percentage : ${percent}%`;
+
+    // Save Result
+
+    await fetch("/quiz/submit",{
+
+        method:"POST",
+
+        headers:{
+            "Content-Type":"application/json"
+        },
+
+        body:JSON.stringify({
+
+            score:score,
+            total:questions.length
+
+        })
+
+    });
+
+}

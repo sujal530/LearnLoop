@@ -8,16 +8,12 @@ from flask import (
     redirect,
     url_for,
 )
-import google.generativeai as genai
+
 from config import Config
+from ai.ai_service import ai_service
 
 quiz_bp = Blueprint("quiz", __name__)
 
-# -----------------------------
-# Configure Gemini
-# -----------------------------
-genai.configure(api_key=Config.GEMINI_API_KEY)
-model = genai.GenerativeModel(Config.GEMINI_MODEL)
 
 DATABASE = Config.DATABASE
 
@@ -45,43 +41,33 @@ def quiz():
 # -----------------------------
 @quiz_bp.route("/quiz/generate", methods=["POST"])
 def generate_quiz():
+
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
-    data = request.get_json() or {}
+    data = request.get_json()
 
-    topic = data.get("topic", "General Knowledge")
+    topic = data.get("topic", "Python")
     difficulty = data.get("difficulty", "Beginner")
 
-    prompt = f"""
-Generate exactly 5 multiple-choice questions.
-
-Topic: {topic}
-Difficulty: {difficulty}
-
-Return ONLY in this format:
-
-Question 1:
-A.
-B.
-C.
-D.
-Answer:
-
-Question 2:
-...
-
-Do not include explanations.
-"""
-
     try:
-        response = model.generate_content(prompt)
-        return jsonify({"quiz": response.text})
+
+        quiz = ai_service.generate_quiz(
+            topic,
+            difficulty
+        )
+
+        return jsonify({
+            "success": True,
+            "quiz": quiz
+        })
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
-
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 # -----------------------------
 # Submit Quiz
 # -----------------------------

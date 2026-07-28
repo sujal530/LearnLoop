@@ -1,66 +1,105 @@
 {% extends "base.html" %}
 
-{% block title %}Quiz{% endblock %}
+{% block title %}AI Quiz{% endblock %}
 
 {% block content %}
-<div class="quiz-container" id="quiz-container"
-     data-question-id="{{ quiz_question.id|default('') }}"
-     data-correct-answer="{{ quiz_question.correct_answer|default('') }}">
 
-  <div class="page-head">
-    <div>
-      <h1 class="page-title">Quiz{% if quiz_question %}: {{ quiz_question.topic }}{% endif %}</h1>
-      <p class="page-subtitle">Test your understanding and earn XP.</p>
+<div class="dashboard-container">
+
+    <div class="page-head">
+        <div>
+            <h1>🧠 AI Quiz Generator</h1>
+            <p>Generate quizzes using Gemini AI and test your knowledge.</p>
+        </div>
     </div>
-    <div class="page-head-actions">
-      <span class="chip" id="quiz-progress-chip">Question {{ current_question_number|default(1) }} of {{ total_questions|default(10) }}</span>
+
+    <div class="dashboard-card">
+
+        <div class="form-group">
+            <label>Topic</label>
+
+            <input
+                type="text"
+                id="quiz-topic"
+                class="form-control"
+                placeholder="Example: Python, DBMS, Java, AI"
+            >
+        </div>
+
+        <br>
+
+        <div class="form-group">
+
+            <label>Difficulty</label>
+
+            <select
+                id="quiz-difficulty"
+                class="form-control">
+
+                <option>Beginner</option>
+                <option>Intermediate</option>
+                <option>Advanced</option>
+
+            </select>
+
+        </div>
+
+        <br>
+
+        <button
+            id="generate-btn"
+            class="btn btn-primary">
+
+            🚀 Generate AI Quiz
+
+        </button>
+
     </div>
-  </div>
 
-  <section class="dashboard-card quiz-card">
-    {% if quiz_question %}
-    <p class="quiz-question" id="quiz-question-text">{{ quiz_question.question }}</p>
 
-    <form id="quiz-form" method="POST" action="{{ url_for('quiz') }}">
-      <input type="hidden" name="question_id" value="{{ quiz_question.id }}">
+    <div
+        id="quiz-box"
+        class="dashboard-card mt-20"
+        style="display:none;">
 
-      <div class="quiz-options" id="quiz-options">
-        <label class="quiz-option" data-option="option_a">
-          <input type="radio" name="selected_answer" value="option_a" id="option-a">
-          <span class="quiz-option-letter">A</span>
-          <span class="quiz-option-text">{{ quiz_question.option_a }}</span>
-        </label>
+        <h2 id="question-title"></h2>
 
-        <label class="quiz-option" data-option="option_b">
-          <input type="radio" name="selected_answer" value="option_b" id="option-b">
-          <span class="quiz-option-letter">B</span>
-          <span class="quiz-option-text">{{ quiz_question.option_b }}</span>
-        </label>
+        <div id="options-container"></div>
 
-        <label class="quiz-option" data-option="option_c">
-          <input type="radio" name="selected_answer" value="option_c" id="option-c">
-          <span class="quiz-option-letter">C</span>
-          <span class="quiz-option-text">{{ quiz_question.option_c }}</span>
-        </label>
+        <br>
 
-        <label class="quiz-option" data-option="option_d">
-          <input type="radio" name="selected_answer" value="option_d" id="option-d">
-          <span class="quiz-option-letter">D</span>
-          <span class="quiz-option-text">{{ quiz_question.option_d }}</span>
-        </label>
-      </div>
+        <button
+            id="next-btn"
+            class="btn btn-success">
 
-      <div class="quiz-footer">
-        <span class="quiz-feedback" id="quiz-feedback"></span>
-        <button type="submit" class="btn btn-primary" id="submit-answer-btn">Submit Answer</button>
-      </div>
-    </form>
-    {% else %}
-    <p class="empty-state">No quiz questions available right now.</p>
-    {% endif %}
-  </section>
+            Next
+
+        </button>
+
+    </div>
+
+
+    <div
+        id="result-box"
+        class="dashboard-card mt-20"
+        style="display:none;">
+
+        <h2>🎉 Quiz Completed</h2>
+
+        <h3 id="final-score"></h3>
+
+        <button
+            class="btn btn-primary"
+            onclick="location.reload()">
+
+            Generate New Quiz
+
+        </button>
+
+    </div>
 
 </div>
+
 {% endblock %}
 
 {% block extra_js %}
